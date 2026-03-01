@@ -78,16 +78,16 @@ Goal: Live site with navigation and placeholders so every route exists.
 
 ### Backend
 
-- [ ] `GET /api/shifts` — query params: `from`, `to`, `location`, `role`; return only `status: 'open'`; **no email** in response
+- [x] `GET /api/shifts` — query params: `from`, `to`, `location`, `role`; return only `status: 'open'`; **no email** in response
 
 ### Frontend
 
-- [ ] `/calendar`: month grid (7 columns); days with open shifts show badge/count
-- [ ] Month navigation: prev/next arrows + "Today"
-- [ ] Filter bar: location (multi-select or pills), role (dropdown); default all locations
-- [ ] Day click → show list of shift cards for that day (time range, location, role, poster name only)
-- [ ] Shift card: compact; tapping opens Shift Detail (modal on desktop, sheet on mobile) — can be placeholder "Detail" for now if Feature 3 follows immediately
-- [ ] Empty states: "No shifts posted for [Month]" and "No shifts match your filters"
+- [x] `/calendar`: month grid (7 columns); days with open shifts show badge/count
+- [x] Month navigation: prev/next arrows + "Today"
+- [x] Filter bar: location (multi-select or pills), role (dropdown); default all locations
+- [x] Day click → show list of shift cards for that day (time range, location, role, poster name only)
+- [x] Shift card: compact; tapping opens Shift Detail (modal on desktop, sheet on mobile); "Cover This Shift" wired in Feature 3
+- [x] Empty states: "No shifts posted for [Month]" and "No shifts match your filters"
 
 **PARALLEL:** GET /api/shifts and calendar UI (grid, filters, day list, cards) can be built in parallel.
 
