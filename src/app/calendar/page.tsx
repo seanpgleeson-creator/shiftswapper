@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useSession } from "next-auth/react";
 
 type Shift = {
   id: string;
@@ -46,6 +47,7 @@ function getCalendarDays(year: number, month: number) {
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default function CalendarPage() {
+  const { data: session } = useSession();
   const today = useMemo(() => new Date(), []);
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
@@ -54,6 +56,8 @@ export default function CalendarPage() {
   const [showCoverConfirm, setShowCoverConfirm] = useState(false);
   const [covererName, setCovererName] = useState("");
   const [covererEmail, setCovererEmail] = useState("");
+  const isAuthenticated = !!session?.user;
+  const sessionName = isAuthenticated ? (session?.user?.name ?? "You") : "";
   const [coverError, setCoverError] = useState<string | null>(null);
   const [coverLoading, setCoverLoading] = useState(false);
   const [coverSuccess, setCoverSuccess] = useState(false);
@@ -84,7 +88,7 @@ export default function CalendarPage() {
   function refetchShifts() {
     const params = new URLSearchParams({ from, to });
     if (locationFilter.length > 0) locationFilter.forEach((l) => params.append("location", l));
-    if (roleFilter) params.set("role", roleFilter);
+    if (!isAuthenticated && roleFilter) params.set("role", roleFilter);
     return fetch(`/api/shifts?${params}`)
       .then((r) => r.json())
       .then((data) => setShifts(data.shifts ?? []));
@@ -93,7 +97,7 @@ export default function CalendarPage() {
   useEffect(() => {
     setLoading(true);
     refetchShifts().finally(() => setLoading(false));
-  }, [from, to, locationFilter, roleFilter]);
+  }, [from, to, locationFilter, roleFilter, isAuthenticated, session?.user]);
 
   useEffect(() => {
     if (!detailShift) return;
@@ -220,24 +224,31 @@ export default function CalendarPage() {
             );
           })}
         </div>
-        <div className="flex items-center gap-2">
-          <label htmlFor="role-filter" className="text-sm text-slate-600">
-            Role:
-          </label>
-          <select
-            id="role-filter"
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-            className="min-h-[44px] rounded-md border border-slate-300 px-2 py-1 text-sm text-slate-800"
-          >
-            <option value="">All</option>
-            {roles.map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
-            ))}
-          </select>
-        </div>
+        {!isAuthenticated && (
+          <div className="flex items-center gap-2">
+            <label htmlFor="role-filter" className="text-sm text-slate-600">
+              Role:
+            </label>
+            <select
+              id="role-filter"
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              className="min-h-[44px] rounded-md border border-slate-300 px-2 py-1 text-sm text-slate-800"
+            >
+              <option value="">All</option>
+              {roles.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+        {isAuthenticated && (session?.user as { position?: string })?.position && (
+          <p className="text-sm text-slate-600">
+            Showing shifts for your position ({(session.user as { position: string }).position})
+          </p>
+        )}
       </div>
 
       {noShiftsInMonth && !noShiftsMatchFilters && (
@@ -414,9 +425,15 @@ export default function CalendarPage() {
                 <h2 id="shift-detail-title" className="text-xl font-semibold text-slate-800 mb-2">
                   Cover this shift
                 </h2>
-                <p className="text-slate-600 text-sm mb-4">
-                  The poster and scheduler will be notified. Enter your details below.
-                </p>
+                {isAuthenticated ? (
+                  <p className="text-slate-600 text-sm mb-4">
+                    You&apos;re covering as <strong>{sessionName}</strong>. The poster and scheduler will be notified.
+                  </p>
+                ) : (
+                  <p className="text-slate-600 text-sm mb-4">
+                    The poster and scheduler will be notified. Enter your details below.
+                  </p>
+                )}
                 {coverError && (
                   <p className="mb-3 flex items-start gap-1.5 text-sm text-red-600" role="alert">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 flex-shrink-0 mt-0.5 text-red-600" aria-hidden>
@@ -425,34 +442,36 @@ export default function CalendarPage() {
                     {coverError}
                   </p>
                 )}
-                <div className="space-y-3 mb-6">
-                  <div>
-                    <label htmlFor="coverer-name" className="block text-sm font-medium text-slate-700 mb-1">
-                      Your name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      id="coverer-name"
-                      type="text"
-                      value={covererName}
-                      onChange={(e) => setCovererName(e.target.value)}
-                      className="block w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900"
-                      placeholder="Jane Smith"
-                    />
+                {!isAuthenticated && (
+                  <div className="space-y-3 mb-6">
+                    <div>
+                      <label htmlFor="coverer-name" className="block text-sm font-medium text-slate-700 mb-1">
+                        Your name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        id="coverer-name"
+                        type="text"
+                        value={covererName}
+                        onChange={(e) => setCovererName(e.target.value)}
+                        className="block w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900"
+                        placeholder="Jane Smith"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="coverer-email" className="block text-sm font-medium text-slate-700 mb-1">
+                        Your email <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        id="coverer-email"
+                        type="email"
+                        value={covererEmail}
+                        onChange={(e) => setCovererEmail(e.target.value)}
+                        className="block w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900"
+                        placeholder="jane@example.com"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label htmlFor="coverer-email" className="block text-sm font-medium text-slate-700 mb-1">
-                      Your email <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      id="coverer-email"
-                      type="email"
-                      value={covererEmail}
-                      onChange={(e) => setCovererEmail(e.target.value)}
-                      className="block w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900"
-                      placeholder="jane@example.com"
-                    />
-                  </div>
-                </div>
+                )}
                 <div className="flex gap-3">
                   <button
                     type="button"
@@ -468,7 +487,7 @@ export default function CalendarPage() {
                   <button
                     type="button"
                     className="flex-1 min-h-[44px] rounded-md bg-blue-600 px-4 py-2.5 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-                    disabled={coverLoading || !covererName.trim() || !covererEmail.trim()}
+                    disabled={!isAuthenticated && (coverLoading || !covererName.trim() || !covererEmail.trim())}
                     onClick={async () => {
                       setCoverError(null);
                       setCoverLoading(true);
@@ -476,10 +495,9 @@ export default function CalendarPage() {
                         const res = await fetch(`/api/shifts/${detailShift.id}/cover`, {
                           method: "PATCH",
                           headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({
-                            coverer_name: covererName.trim(),
-                            coverer_email: covererEmail.trim(),
-                          }),
+                          body: JSON.stringify(
+                            isAuthenticated ? {} : { coverer_name: covererName.trim(), coverer_email: covererEmail.trim() }
+                          ),
                         });
                         const data = await res.json();
                         if (!res.ok) {

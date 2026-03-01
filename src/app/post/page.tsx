@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 
 function ErrorIcon({ className }: { className?: string }) {
   return (
@@ -23,6 +24,7 @@ function tomorrowISO(): string {
 type FieldErrors = Record<string, string | undefined>;
 
 export default function PostPage() {
+  const { data: session, status: sessionStatus } = useSession();
   const [locations, setLocations] = useState<string[]>([]);
   const [roles, setRoles] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -99,15 +101,17 @@ export default function PostPage() {
   }
 
   const endTimeError = form.start_time && form.end_time && !validateEndAfterStart() ? "End time must be after start time" : null;
-  const allValid =
-    form.poster_name.trim() &&
-    form.poster_email &&
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.poster_email) &&
-    form.shift_date &&
-    form.location &&
-    form.role &&
-    validateEndAfterStart() &&
-    !Object.values(errors).some(Boolean);
+  const isAuthenticated = !!session?.user;
+  const allValid = isAuthenticated
+    ? form.shift_date && form.location && validateEndAfterStart() && !errors.shift_date && !errors.start_time && !errors.end_time && !errors.location
+    : form.poster_name.trim() &&
+      form.poster_email &&
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.poster_email) &&
+      form.shift_date &&
+      form.location &&
+      form.role &&
+      validateEndAfterStart() &&
+      !Object.values(errors).some(Boolean);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -115,19 +119,27 @@ export default function PostPage() {
     setSubmitting(true);
     setToast(null);
     try {
+      const body = isAuthenticated
+        ? {
+            shift_date: form.shift_date,
+            start_time: form.start_time,
+            end_time: form.end_time,
+            location: form.location,
+          }
+        : {
+            poster_name: form.poster_name.trim(),
+            poster_email: form.poster_email.trim(),
+            poster_phone: form.poster_phone.trim() || undefined,
+            location: form.location,
+            role: form.role,
+            shift_date: form.shift_date,
+            start_time: form.start_time,
+            end_time: form.end_time,
+          };
       const res = await fetch("/api/shifts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          poster_name: form.poster_name.trim(),
-          poster_email: form.poster_email.trim(),
-          poster_phone: form.poster_phone.trim() || undefined,
-          location: form.location,
-          role: form.role,
-          shift_date: form.shift_date,
-          start_time: form.start_time,
-          end_time: form.end_time,
-        }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -194,28 +206,30 @@ export default function PostPage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label htmlFor="poster_name" className="block text-sm font-medium text-slate-700 mb-1">
-            Your Name <span className="text-red-500">*</span>
-          </label>
-          <input
-            id="poster_name"
-            name="poster_name"
-            type="text"
-            value={form.poster_name}
-            onChange={(e) => setForm((p) => ({ ...p, poster_name: e.target.value }))}
-            onBlur={handleBlur}
-            className={`block w-full rounded-md border px-3 py-2 text-slate-900 shadow-sm focus:ring-2 focus:ring-blue-500 ${
-              errors.poster_name ? "border-red-500" : "border-slate-300"
-            }`}
-          />
-          {errors.poster_name && (
-            <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600">
-              <ErrorIcon className="flex-shrink-0 mt-0.5" />
-              {errors.poster_name}
-            </p>
-          )}
-        </div>
+        {!isAuthenticated && (
+          <div>
+            <label htmlFor="poster_name" className="block text-sm font-medium text-slate-700 mb-1">
+              Your Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="poster_name"
+              name="poster_name"
+              type="text"
+              value={form.poster_name}
+              onChange={(e) => setForm((p) => ({ ...p, poster_name: e.target.value }))}
+              onBlur={handleBlur}
+              className={`block w-full rounded-md border px-3 py-2 text-slate-900 shadow-sm focus:ring-2 focus:ring-blue-500 ${
+                errors.poster_name ? "border-red-500" : "border-slate-300"
+              }`}
+            />
+            {errors.poster_name && (
+              <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600">
+                <ErrorIcon className="flex-shrink-0 mt-0.5" />
+                {errors.poster_name}
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -318,80 +332,84 @@ export default function PostPage() {
           )}
         </div>
 
-        <div>
-          <label htmlFor="role" className="block text-sm font-medium text-slate-700 mb-1">
-            Title / Role <span className="text-red-500">*</span>
-          </label>
-          <select
-            id="role"
-            name="role"
-            value={form.role}
-            onChange={(e) => setForm((p) => ({ ...p, role: e.target.value }))}
-            onBlur={handleBlur}
-            className={`block w-full rounded-md border px-3 py-2 text-slate-900 shadow-sm focus:ring-2 focus:ring-blue-500 ${
-              errors.role ? "border-red-500" : "border-slate-300"
-            }`}
-          >
-            <option value="">Select role</option>
-            {roles.map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
-            ))}
-          </select>
-          {errors.role && (
-            <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600">
-              <ErrorIcon className="flex-shrink-0 mt-0.5" />
-              {errors.role}
-            </p>
-          )}
-        </div>
+        {!isAuthenticated && (
+          <>
+            <div>
+              <label htmlFor="role" className="block text-sm font-medium text-slate-700 mb-1">
+                Title / Role <span className="text-red-500">*</span>
+              </label>
+              <select
+                id="role"
+                name="role"
+                value={form.role}
+                onChange={(e) => setForm((p) => ({ ...p, role: e.target.value }))}
+                onBlur={handleBlur}
+                className={`block w-full rounded-md border px-3 py-2 text-slate-900 shadow-sm focus:ring-2 focus:ring-blue-500 ${
+                  errors.role ? "border-red-500" : "border-slate-300"
+                }`}
+              >
+                <option value="">Select role</option>
+                {roles.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+              {errors.role && (
+                <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600">
+                  <ErrorIcon className="flex-shrink-0 mt-0.5" />
+                  {errors.role}
+                </p>
+              )}
+            </div>
 
-        <div>
-          <label htmlFor="poster_email" className="block text-sm font-medium text-slate-700 mb-1">
-            Email <span className="text-red-500">*</span>
-          </label>
-          <input
-            id="poster_email"
-            name="poster_email"
-            type="email"
-            value={form.poster_email}
-            onChange={(e) => setForm((p) => ({ ...p, poster_email: e.target.value }))}
-            onBlur={handleBlur}
-            className={`block w-full rounded-md border px-3 py-2 text-slate-900 shadow-sm focus:ring-2 focus:ring-blue-500 ${
-              errors.poster_email ? "border-red-500" : "border-slate-300"
-            }`}
-          />
-          {errors.poster_email && (
-            <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600">
-              <ErrorIcon className="flex-shrink-0 mt-0.5" />
-              {errors.poster_email}
-            </p>
-          )}
-        </div>
+            <div>
+              <label htmlFor="poster_email" className="block text-sm font-medium text-slate-700 mb-1">
+                Email <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="poster_email"
+                name="poster_email"
+                type="email"
+                value={form.poster_email}
+                onChange={(e) => setForm((p) => ({ ...p, poster_email: e.target.value }))}
+                onBlur={handleBlur}
+                className={`block w-full rounded-md border px-3 py-2 text-slate-900 shadow-sm focus:ring-2 focus:ring-blue-500 ${
+                  errors.poster_email ? "border-red-500" : "border-slate-300"
+                }`}
+              />
+              {errors.poster_email && (
+                <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600">
+                  <ErrorIcon className="flex-shrink-0 mt-0.5" />
+                  {errors.poster_email}
+                </p>
+              )}
+            </div>
 
-        <div>
-          <label htmlFor="poster_phone" className="block text-sm font-medium text-slate-500 mb-1">
-            Mobile Phone <span className="text-slate-400">(optional)</span>
-          </label>
-          <input
-            id="poster_phone"
-            name="poster_phone"
-            type="tel"
-            value={form.poster_phone}
-            onChange={(e) => setForm((p) => ({ ...p, poster_phone: e.target.value }))}
-            onBlur={handleBlur}
-            placeholder="For future text notifications"
-            className={`block w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:ring-2 focus:ring-blue-500`}
-          />
-          <p className="mt-1 text-xs text-slate-500">Optional — we&apos;ll add text notifications soon.</p>
-          {errors.poster_phone && (
-            <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600">
-              <ErrorIcon className="flex-shrink-0 mt-0.5" />
-              {errors.poster_phone}
-            </p>
-          )}
-        </div>
+            <div>
+              <label htmlFor="poster_phone" className="block text-sm font-medium text-slate-500 mb-1">
+                Mobile Phone <span className="text-slate-400">(optional)</span>
+              </label>
+              <input
+                id="poster_phone"
+                name="poster_phone"
+                type="tel"
+                value={form.poster_phone}
+                onChange={(e) => setForm((p) => ({ ...p, poster_phone: e.target.value }))}
+                onBlur={handleBlur}
+                placeholder="For future text notifications"
+                className={`block w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:ring-2 focus:ring-blue-500`}
+              />
+              <p className="mt-1 text-xs text-slate-500">Optional — we&apos;ll add text notifications soon.</p>
+              {errors.poster_phone && (
+                <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600">
+                  <ErrorIcon className="flex-shrink-0 mt-0.5" />
+                  {errors.poster_phone}
+                </p>
+              )}
+            </div>
+          </>
+        )}
 
         <button
           type="submit"

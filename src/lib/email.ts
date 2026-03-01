@@ -90,3 +90,26 @@ A shift has been picked up via ShiftSwapper. Please update the schedule.
 
   return { posterOk, schedulerOk, error: lastError };
 }
+
+export async function sendSignupNotificationToAdmin(
+  adminEmail: string,
+  user: { firstName: string; lastName: string; email: string; position: string }
+): Promise<{ ok: boolean; error?: string }> {
+  if (!resend) {
+    console.warn("RESEND_API_KEY not set; skipping signup notification");
+    return { ok: false, error: "Email not configured" };
+  }
+  try {
+    const res = await resend.emails.send({
+      from: fromEmail,
+      to: adminEmail,
+      subject: `ShiftSwapper: New signup – ${user.firstName} ${user.lastName}`,
+      text: `A new user signed up for ShiftSwapper:\n\nName: ${user.firstName} ${user.lastName}\nEmail: ${user.email}\nPosition: ${user.position}\n\n-- ShiftSwapper`,
+    });
+    return { ok: res.data != null, error: res.error?.message };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Failed to send signup notification";
+    console.error("Signup notification send failed:", e);
+    return { ok: false, error: message };
+  }
+}

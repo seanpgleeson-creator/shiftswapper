@@ -44,3 +44,47 @@ export const coverShiftSchema = z.object({
 });
 
 export type CoverShiftInput = z.infer<typeof coverShiftSchema>;
+
+export const coverShiftAuthenticatedSchema = z.object({
+  coverer_name: z.string().optional(),
+  coverer_email: z.string().email().optional(),
+});
+
+export const signupSchema = z
+  .object({
+    first_name: z.string().min(1, "First name is required"),
+    last_name: z.string().min(1, "Last name is required"),
+    email: z.string().email("Invalid email"),
+    position: z.enum(ROLES as unknown as [string, ...string[]]),
+    phone: z
+      .string()
+      .optional()
+      .refine((v) => !v || /^[\d\s\-+()]{10,}$/.test(v), "Invalid phone format"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+  });
+
+export type SignupInput = z.infer<typeof signupSchema>;
+
+const createShiftAuthenticatedBase = z
+  .object({
+    shift_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date"),
+    start_time: z.string().regex(HHMM, "Use HH:MM format"),
+    end_time: z.string().regex(HHMM, "Use HH:MM format"),
+    location: z.enum(LOCATIONS as unknown as [string, ...string[]]),
+  })
+  .refine(
+    (data) => {
+      const d = new Date(data.shift_date + "T12:00:00.000Z");
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return d >= today;
+    },
+    { message: "Shift date must be today or in the future", path: ["shift_date"] }
+  )
+  .refine(
+    (data) => timeToMinutes(data.start_time) < timeToMinutes(data.end_time),
+    { message: "End time must be after start time", path: ["end_time"] }
+  );
+
+export const createShiftAuthenticatedSchema = createShiftAuthenticatedBase;
+export type CreateShiftAuthenticatedInput = z.infer<typeof createShiftAuthenticatedSchema>;

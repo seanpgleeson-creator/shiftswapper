@@ -1,6 +1,11 @@
+"use client";
+
 import Link from "next/link";
+import { useSession, signOut } from "next-auth/react";
 
 export function NavBar() {
+  const { data: session, status } = useSession();
+
   return (
     <header className="border-b border-slate-200 bg-white">
       <nav className="max-w-4xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
@@ -23,6 +28,39 @@ export function NavBar() {
               Browse Shifts
             </Link>
           </li>
+          {status === "loading" ? (
+            <li className="text-slate-500 text-sm">…</li>
+          ) : session ? (
+            <>
+              <li>
+                <Link href="/account" className="text-slate-600 hover:text-slate-900 font-medium">
+                  Account
+                </Link>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                  className="text-slate-600 hover:text-slate-900 font-medium"
+                >
+                  Log out
+                </button>
+              </li>
+            </>
+          ) : (
+            <>
+              <li>
+                <Link href="/login" className="text-slate-600 hover:text-slate-900 font-medium">
+                  Log in
+                </Link>
+              </li>
+              <li>
+                <Link href="/signup" className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700">
+                  Sign up
+                </Link>
+              </li>
+            </>
+          )}
         </ul>
       </nav>
     </header>

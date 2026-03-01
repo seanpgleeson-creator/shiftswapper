@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { coverShiftSchema } from "@/lib/validation";
+import { coverShiftSchema, coverShiftAuthenticatedSchema } from "@/lib/validation";
 import { sendCoverEmails } from "@/lib/email";
 import { buildGoogleCalendarUrl } from "@/lib/calendar";
 
@@ -9,6 +11,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const session = await getServerSession(authOptions);
 
   const shift = await prisma.shift.findUnique({ where: { id } });
   if (!shift) {
@@ -25,38 +28,53 @@ export async function PATCH(
     );
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON", code: "VALIDATION_ERROR" },
-      { status: 422 }
-    );
+  let covererName: string;
+  let covererEmail: string;
+
+  if (session?.user) {
+    const u = session.user as { name?: string; email?: string; firstName?: string; lastName?: string };
+    covererName = [u.firstName, u.lastName].filter(Boolean).join(" ").trim() || u.name || "User";
+    covererEmail = u.email ?? "";
+    const body = await request.json().catch(() => ({}));
+    const parsed = coverShiftAuthenticatedSchema.safeParse(body);
+    if (parsed.success && parsed.data.coverer_name && parsed.data.coverer_email) {
+      covererName = parsed.data.coverer_name;
+      covererEmail = parsed.data.coverer_email;
+    }
+  } else {
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid JSON", code: "VALIDATION_ERROR" },
+        { status: 422 }
+      );
+    }
+    const parsed = coverShiftSchema.safeParse(body);
+    if (!parsed.success) {
+      const fields = parsed.error.flatten().fieldErrors;
+      const fieldList = Object.entries(fields).map(([field, messages]) => ({
+        field,
+        message: Array.isArray(messages) ? messages[0] : messages,
+      }));
+      return NextResponse.json(
+        { error: "Validation failed", code: "VALIDATION_ERROR", fields: fieldList },
+        { status: 422 }
+      );
+    }
+    covererName = parsed.data.coverer_name;
+    covererEmail = parsed.data.coverer_email;
   }
 
-  const parsed = coverShiftSchema.safeParse(body);
-  if (!parsed.success) {
-    const fields = parsed.error.flatten().fieldErrors;
-    const fieldList = Object.entries(fields).map(([field, messages]) => ({
-      field,
-      message: Array.isArray(messages) ? messages[0] : messages,
-    }));
-    return NextResponse.json(
-      { error: "Validation failed", code: "VALIDATION_ERROR", fields: fieldList },
-      { status: 422 }
-    );
-  }
-
-  const { coverer_name, coverer_email } = parsed.data;
   const coveredAt = new Date();
 
   const updated = await prisma.shift.update({
     where: { id },
     data: {
       status: "covered",
-      covererName: coverer_name,
-      covererEmail: coverer_email,
+      covererName,
+      covererEmail,
       coveredAt,
     },
   });
@@ -67,8 +85,8 @@ export async function PATCH(
   const emailPayload = {
     posterEmail: shift.posterEmail,
     posterName: shift.posterName,
-    covererName: coverer_name,
-    covererEmail: coverer_email,
+    covererName,
+    covererEmail,
     shiftDate: shift.shiftDate.toISOString().slice(0, 10),
     startTime: shift.startTime,
     endTime: shift.endTime,

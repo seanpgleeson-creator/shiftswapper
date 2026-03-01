@@ -10,21 +10,41 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id           String   @id @default(uuid())
+  firstName    String   @map("first_name")
+  lastName     String   @map("last_name")
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  phone        String?
+  position     String   // e.g. Pharmacist; validated against ROLES
+  role         String   @default("member") // member | admin
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  shiftsPosted Shift[]  @relation("PostedBy")
+
+  @@map("users")
+}
+
 model Shift {
-  id           String    @id @default(uuid())
-  posterName   String    @map("poster_name")
-  posterEmail  String    @map("poster_email")
-  posterPhone  String?   @map("poster_phone")
-  location     String
-  role         String
-  shiftDate    DateTime  @db.Date @map("shift_date")
-  startTime    String    @map("start_time") // HH:MM
-  endTime      String    @map("end_time")   // HH:MM
-  status       String    @default("open")   // open | covered | cancelled
-  covererName  String?   @map("coverer_name")
-  covererEmail String?   @map("coverer_email")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  coveredAt    DateTime? @map("covered_at")
+  id               String    @id @default(uuid())
+  posterName       String    @map("poster_name")
+  posterEmail      String    @map("poster_email")
+  posterPhone      String?   @map("poster_phone")
+  location         String
+  role             String
+  shiftDate        DateTime  @db.Date @map("shift_date")
+  startTime        String    @map("start_time") // HH:MM
+  endTime          String    @map("end_time")   // HH:MM
+  status           String    @default("open")   // open | covered | cancelled
+  covererName      String?   @map("coverer_name")
+  covererEmail     String?   @map("coverer_email")
+  postedByUserId   String?   @map("posted_by_user_id")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  coveredAt        DateTime? @map("covered_at")
+
+  postedByUser User? @relation("PostedBy", fields: [postedByUserId], references: [id], onDelete: SetNull)
 
   @@map("shifts")
 }
