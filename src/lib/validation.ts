@@ -37,3 +37,10 @@ export const createShiftSchema = z
   );
 
 export type CreateShiftInput = z.infer<typeof createShiftSchema>;
+
+export const coverShiftSchema = z.object({
+  coverer_name: z.string().min(1, "Name is required"),
+  coverer_email: z.string().email("Invalid email"),
+});
+
+export type CoverShiftInput = z.infer<typeof coverShiftSchema>;

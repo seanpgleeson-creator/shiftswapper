@@ -51,6 +51,12 @@ export default function CalendarPage() {
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [detailShift, setDetailShift] = useState<Shift | null>(null);
+  const [showCoverConfirm, setShowCoverConfirm] = useState(false);
+  const [covererName, setCovererName] = useState("");
+  const [covererEmail, setCovererEmail] = useState("");
+  const [coverError, setCoverError] = useState<string | null>(null);
+  const [coverLoading, setCoverLoading] = useState(false);
+  const [coverSuccess, setCoverSuccess] = useState(false);
 
   const [locations, setLocations] = useState<string[]>([]);
   const [roles, setRoles] = useState<string[]>([]);
@@ -74,17 +80,18 @@ export default function CalendarPage() {
     });
   }, []);
 
-  useEffect(() => {
-    setLoading(true);
+  function refetchShifts() {
     const params = new URLSearchParams({ from, to });
     if (locationFilter.length > 0) locationFilter.forEach((l) => params.append("location", l));
     if (roleFilter) params.set("role", roleFilter);
-    fetch(`/api/shifts?${params}`)
+    return fetch(`/api/shifts?${params}`)
       .then((r) => r.json())
-      .then((data) => {
-        setShifts(data.shifts ?? []);
-      })
-      .finally(() => setLoading(false));
+      .then((data) => setShifts(data.shifts ?? []));
+  }
+
+  useEffect(() => {
+    setLoading(true);
+    refetchShifts().finally(() => setLoading(false));
   }, [from, to, locationFilter, roleFilter]);
 
   const shiftsByDay = useMemo(() => {
@@ -142,7 +149,7 @@ export default function CalendarPage() {
     (locationFilter.length > 0 || roleFilter);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-6xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-semibold text-slate-800 mb-6">Browse Shifts</h1>
 
       <div className="mb-6 flex flex-wrap items-center gap-4">
@@ -227,88 +234,101 @@ export default function CalendarPage() {
       )}
 
       {!noShiftsInMonth && (
-        <>
-          <div className="grid grid-cols-7 gap-1 mb-2">
-            {DAY_NAMES.map((d) => (
-              <div
-                key={d}
-                className="text-center text-xs font-medium text-slate-500 py-1"
-              >
-                {d}
-              </div>
-            ))}
-          </div>
-          <div className="grid grid-cols-7 gap-1">
-            {calendarDays.map((d, i) => {
-              if (d === null)
-                return <div key={`empty-${i}`} className="aspect-square" />;
-              const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-              const dayShifts = shiftsByDay[dateStr] ?? [];
-              const isSelected = selectedDay === dateStr;
-              const isToday =
-                today.getFullYear() === viewYear &&
-                today.getMonth() === viewMonth &&
-                today.getDate() === d;
-              return (
-                <button
-                  key={dateStr}
-                  type="button"
-                  onClick={() => setSelectedDay(dateStr)}
-                  className={`aspect-square min-w-[44px] rounded-md border text-sm ${
-                    isSelected
-                      ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500"
-                      : "border-slate-200 bg-white hover:bg-slate-50"
-                  } ${isToday ? "font-semibold text-blue-600" : "text-slate-800"}`}
+        <div className="flex flex-col md:flex-row md:items-start gap-6 md:gap-8">
+          <div className="flex-shrink-0">
+            <div className="grid grid-cols-7 gap-1 mb-2">
+              {DAY_NAMES.map((d) => (
+                <div
+                  key={d}
+                  className="text-center text-xs font-medium text-slate-500 py-1"
                 >
-                  <span>{d}</span>
-                  {dayShifts.length > 0 && (
-                    <span className="ml-0.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-blue-100 px-1 text-xs text-blue-800">
-                      {dayShifts.length}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+                  {d}
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 gap-1">
+              {calendarDays.map((d, i) => {
+                if (d === null)
+                  return <div key={`empty-${i}`} className="aspect-square" />;
+                const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+                const dayShifts = shiftsByDay[dateStr] ?? [];
+                const isSelected = selectedDay === dateStr;
+                const isToday =
+                  today.getFullYear() === viewYear &&
+                  today.getMonth() === viewMonth &&
+                  today.getDate() === d;
+                return (
+                  <button
+                    key={dateStr}
+                    type="button"
+                    onClick={() => setSelectedDay(dateStr)}
+                    className={`aspect-square min-w-[44px] rounded-md border text-sm ${
+                      isSelected
+                        ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500"
+                        : "border-slate-200 bg-white hover:bg-slate-50"
+                    } ${isToday ? "font-semibold text-blue-600" : "text-slate-800"}`}
+                  >
+                    <span>{d}</span>
+                    {dayShifts.length > 0 && (
+                      <span className="ml-0.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-blue-100 px-1 text-xs text-blue-800">
+                        {dayShifts.length}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </>
-      )}
 
-      {selectedDay && selectedShifts.length > 0 && (
-        <section className="mt-8 border-t border-slate-200 pt-6">
-          <h2 className="text-lg font-semibold text-slate-800 mb-3">
-            Shifts on {selectedDay}
-          </h2>
-          <ul className="space-y-3">
-            {selectedShifts.map((shift) => (
-              <li key={shift.id}>
-                <button
-                  type="button"
-                  onClick={() => setDetailShift(shift)}
-                  className="w-full rounded-lg border border-slate-200 bg-white p-4 text-left shadow-sm hover:border-blue-200 hover:shadow transition"
-                >
-                  <div className="font-medium text-slate-800">
-                    {formatTime(shift.start_time)} – {formatTime(shift.end_time)}
-                  </div>
-                  <div className="text-sm text-slate-600">{shift.location}</div>
-                  <div className="text-sm text-slate-600">{shift.role}</div>
-                  <div className="text-sm text-slate-500">
-                    Posted by {shift.poster_name}
-                  </div>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {selectedDay && selectedShifts.length === 0 && shifts.length > 0 && (
-        <p className="mt-6 text-slate-600">No shifts on this day.</p>
+          <section className="md:min-w-[280px] md:flex-1 md:border-l md:border-slate-200 md:pl-8 md:pt-0 mt-6 md:mt-0">
+            {selectedDay ? (
+              selectedShifts.length > 0 ? (
+                <>
+                  <h2 className="text-lg font-semibold text-slate-800 mb-3">
+                    Shifts on {selectedDay}
+                  </h2>
+                  <ul className="space-y-3">
+                    {selectedShifts.map((shift) => (
+                      <li key={shift.id}>
+                        <button
+                          type="button"
+                          onClick={() => setDetailShift(shift)}
+                          className="w-full rounded-lg border border-slate-200 bg-white p-4 text-left shadow-sm hover:border-blue-200 hover:shadow transition"
+                        >
+                          <div className="font-medium text-slate-800">
+                            {formatTime(shift.start_time)} – {formatTime(shift.end_time)}
+                          </div>
+                          <div className="text-sm text-slate-600">{shift.location}</div>
+                          <div className="text-sm text-slate-600">{shift.role}</div>
+                          <div className="text-sm text-slate-500">
+                            Posted by {shift.poster_name}
+                          </div>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <p className="text-slate-600">No shifts on this day.</p>
+              )
+            ) : (
+              <p className="text-slate-500 text-sm">Select a day to view shifts.</p>
+            )}
+          </section>
+        </div>
       )}
 
       {detailShift && (
         <div
           className="fixed inset-0 z-10 flex items-end sm:items-center justify-center bg-black/50 p-4"
-          onClick={() => setDetailShift(null)}
+          onClick={() => {
+            setDetailShift(null);
+            setShowCoverConfirm(false);
+            setCoverSuccess(false);
+            setCoverError(null);
+            setCovererName("");
+            setCovererEmail("");
+          }}
           onKeyDown={(e) => e.key === "Escape" && setDetailShift(null)}
           role="dialog"
           aria-modal="true"
@@ -318,51 +338,173 @@ export default function CalendarPage() {
             className="w-full max-w-md rounded-t-2xl sm:rounded-2xl bg-white p-6 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 id="shift-detail-title" className="text-xl font-semibold text-slate-800 mb-4">
-              Shift details
-            </h2>
-            <dl className="space-y-2 text-slate-700">
-              <div>
-                <dt className="text-sm text-slate-500">Date</dt>
-                <dd>{detailShift.shift_date}</dd>
-              </div>
-              <div>
-                <dt className="text-sm text-slate-500">Time</dt>
-                <dd>
-                  {formatTime(detailShift.start_time)} –{" "}
-                  {formatTime(detailShift.end_time)}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-sm text-slate-500">Location</dt>
-                <dd>{detailShift.location}</dd>
-              </div>
-              <div>
-                <dt className="text-sm text-slate-500">Role</dt>
-                <dd>{detailShift.role}</dd>
-              </div>
-              <div>
-                <dt className="text-sm text-slate-500">Posted by</dt>
-                <dd>{detailShift.poster_name}</dd>
-              </div>
-            </dl>
-            <div className="mt-6 flex gap-3">
-              <button
-                type="button"
-                className="flex-1 rounded-md bg-blue-600 px-4 py-2.5 font-medium text-white hover:bg-blue-700"
-                onClick={() => setDetailShift(null)}
-              >
-                Close
-              </button>
-              <button
-                type="button"
-                className="flex-1 rounded-md border border-slate-300 bg-white px-4 py-2.5 font-medium text-slate-700 hover:bg-slate-50"
-                disabled
-                title="Coming in Feature 3"
-              >
-                Cover This Shift
-              </button>
-            </div>
+            {coverSuccess ? (
+              <>
+                <h2 id="shift-detail-title" className="text-xl font-semibold text-slate-800 mb-2">
+                  You&apos;re covering this shift!
+                </h2>
+                <dl className="space-y-2 text-slate-700 mb-6">
+                  <div>
+                    <dt className="text-sm text-slate-500">Date</dt>
+                    <dd>{detailShift.shift_date}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm text-slate-500">Time</dt>
+                    <dd>
+                      {formatTime(detailShift.start_time)} – {formatTime(detailShift.end_time)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm text-slate-500">Location</dt>
+                    <dd>{detailShift.location}</dd>
+                  </div>
+                </dl>
+                <button
+                  type="button"
+                  className="w-full rounded-md bg-blue-600 px-4 py-2.5 font-medium text-white hover:bg-blue-700"
+                  onClick={() => {
+                    setDetailShift(null);
+                    setCoverSuccess(false);
+                  }}
+                >
+                  Back to Calendar
+                </button>
+              </>
+            ) : showCoverConfirm ? (
+              <>
+                <h2 id="shift-detail-title" className="text-xl font-semibold text-slate-800 mb-2">
+                  Cover this shift
+                </h2>
+                <p className="text-slate-600 text-sm mb-4">
+                  The poster and scheduler will be notified. Enter your details below.
+                </p>
+                {coverError && (
+                  <p className="mb-3 text-sm text-red-600" role="alert">
+                    {coverError}
+                  </p>
+                )}
+                <div className="space-y-3 mb-6">
+                  <div>
+                    <label htmlFor="coverer-name" className="block text-sm font-medium text-slate-700 mb-1">
+                      Your name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="coverer-name"
+                      type="text"
+                      value={covererName}
+                      onChange={(e) => setCovererName(e.target.value)}
+                      className="block w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900"
+                      placeholder="Jane Smith"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="coverer-email" className="block text-sm font-medium text-slate-700 mb-1">
+                      Your email <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="coverer-email"
+                      type="email"
+                      value={covererEmail}
+                      onChange={(e) => setCovererEmail(e.target.value)}
+                      className="block w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900"
+                      placeholder="jane@example.com"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    className="flex-1 rounded-md border border-slate-300 bg-white px-4 py-2.5 font-medium text-slate-700 hover:bg-slate-50"
+                    onClick={() => {
+                      setShowCoverConfirm(false);
+                      setCoverError(null);
+                    }}
+                    disabled={coverLoading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="flex-1 rounded-md bg-blue-600 px-4 py-2.5 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                    disabled={coverLoading || !covererName.trim() || !covererEmail.trim()}
+                    onClick={async () => {
+                      setCoverError(null);
+                      setCoverLoading(true);
+                      try {
+                        const res = await fetch(`/api/shifts/${detailShift.id}/cover`, {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            coverer_name: covererName.trim(),
+                            coverer_email: covererEmail.trim(),
+                          }),
+                        });
+                        const data = await res.json();
+                        if (!res.ok) {
+                          setCoverError(data.error ?? "Something went wrong. Please try again.");
+                          return;
+                        }
+                        setCoverSuccess(true);
+                        refetchShifts();
+                      } catch {
+                        setCoverError("Something went wrong. Please try again.");
+                      } finally {
+                        setCoverLoading(false);
+                      }
+                    }}
+                  >
+                    {coverLoading ? "Submitting…" : "Confirm"}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 id="shift-detail-title" className="text-xl font-semibold text-slate-800 mb-4">
+                  Shift details
+                </h2>
+                <dl className="space-y-2 text-slate-700">
+                  <div>
+                    <dt className="text-sm text-slate-500">Date</dt>
+                    <dd>{detailShift.shift_date}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm text-slate-500">Time</dt>
+                    <dd>
+                      {formatTime(detailShift.start_time)} –{" "}
+                      {formatTime(detailShift.end_time)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm text-slate-500">Location</dt>
+                    <dd>{detailShift.location}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm text-slate-500">Role</dt>
+                    <dd>{detailShift.role}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm text-slate-500">Posted by</dt>
+                    <dd>{detailShift.poster_name}</dd>
+                  </div>
+                </dl>
+                <div className="mt-6 flex gap-3">
+                  <button
+                    type="button"
+                    className="flex-1 rounded-md border border-slate-300 bg-white px-4 py-2.5 font-medium text-slate-700 hover:bg-slate-50"
+                    onClick={() => setDetailShift(null)}
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="button"
+                    className="flex-1 rounded-md bg-blue-600 px-4 py-2.5 font-medium text-white hover:bg-blue-700"
+                    onClick={() => setShowCoverConfirm(true)}
+                  >
+                    Cover This Shift
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

@@ -99,18 +99,18 @@ Goal: Live site with navigation and placeholders so every route exists.
 
 ### Backend
 
-- [ ] `GET /api/shifts/:id` — return shift; **omit** poster_email (and coverer_email if present)
-- [ ] `PATCH /api/shifts/:id/cover` — body: `coverer_name`, `coverer_email`; validate; 404 if not found, 409 if not open; update DB; send two emails (poster + scheduler) via Resend or SendGrid
-- [ ] Env: email API key, from-address; read `scheduler_email` from `settings` table
-- [ ] Email failure: log only; do not roll back cover; response still 200
+- [x] `GET /api/shifts/:id` — return shift; **omit** poster_email (and coverer_email if present)
+- [x] `PATCH /api/shifts/:id/cover` — body: `coverer_name`, `coverer_email`; validate; 404 if not found, 409 if not open; update DB; send two emails (poster + scheduler) via Resend
+- [x] Env: email API key, from-address; read `scheduler_email` from `settings` table
+- [x] Email failure: log only; do not roll back cover; response still 200
 
 ### Frontend
 
-- [ ] Shift Detail (modal/sheet): date, time, location, role, poster name; "Cover This Shift" CTA
-- [ ] On "Cover This Shift": confirmation dialog — "Poster and scheduler will be notified"; collect coverer name and email (required)
-- [ ] On confirm: `PATCH /api/shifts/:id/cover`; loading state on button
-- [ ] Success: show "You're covering this shift!" + shift summary; error: "Something went wrong," re-enable button
-- [ ] After cover, calendar/list refreshes so shift disappears or is marked covered
+- [x] Shift Detail (modal/sheet): date, time, location, role, poster name; "Cover This Shift" CTA
+- [x] On "Cover This Shift": confirmation dialog — "Poster and scheduler will be notified"; collect coverer name and email (required)
+- [x] On confirm: `PATCH /api/shifts/:id/cover`; loading state on button
+- [x] Success: show "You're covering this shift!" + shift summary; error: "Something went wrong," re-enable button
+- [x] After cover, calendar/list refreshes so shift disappears or is marked covered
 
 **PARALLEL:** Cover API (GET by id, PATCH, email) and UI (detail modal, dialog, success view) can be built in parallel.
 
