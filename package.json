@@ -18,15 +18,18 @@
   },
   "dependencies": {
     "@prisma/client": "^6.0.0",
+    "bcryptjs": "^3.0.3",
     "ical-generator": "^10.0.0",
     "luxon": "^3.7.2",
     "next": "^15.0.0",
+    "next-auth": "^4.24.13",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "resend": "^4.0.0",
     "zod": "^3.23.0"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/luxon": "^3.7.1",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
