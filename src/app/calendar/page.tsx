@@ -95,6 +95,23 @@ export default function CalendarPage() {
     refetchShifts().finally(() => setLoading(false));
   }, [from, to, locationFilter, roleFilter]);
 
+  useEffect(() => {
+    if (!detailShift) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setDetailShift(null);
+        setShowCoverConfirm(false);
+        setCoverSuccess(false);
+        setCoverGoogleCalendarUrl(null);
+        setCoverError(null);
+        setCovererName("");
+        setCovererEmail("");
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [detailShift]);
+
   const shiftsByDay = useMemo(() => {
     const map: Record<string, Shift[]> = {};
     shifts.forEach((s) => {
@@ -158,7 +175,7 @@ export default function CalendarPage() {
           <button
             type="button"
             onClick={goPrev}
-            className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-slate-700 hover:bg-slate-50"
+            className="min-h-[44px] min-w-[44px] rounded-md border border-slate-300 bg-white px-3 py-1.5 text-slate-700 hover:bg-slate-50"
             aria-label="Previous month"
           >
             ←
@@ -169,7 +186,7 @@ export default function CalendarPage() {
           <button
             type="button"
             onClick={goNext}
-            className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-slate-700 hover:bg-slate-50"
+            className="min-h-[44px] min-w-[44px] rounded-md border border-slate-300 bg-white px-3 py-1.5 text-slate-700 hover:bg-slate-50"
             aria-label="Next month"
           >
             →
@@ -177,7 +194,7 @@ export default function CalendarPage() {
           <button
             type="button"
             onClick={goToday}
-            className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+            className="min-h-[44px] rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
           >
             Today
           </button>
@@ -192,7 +209,7 @@ export default function CalendarPage() {
                 key={loc}
                 type="button"
                 onClick={() => toggleLocation(loc)}
-                className={`rounded-full px-3 py-1 text-sm ${
+                className={`min-h-[44px] rounded-full px-3 py-1 text-sm ${
                   on
                     ? "bg-blue-100 text-blue-800"
                     : "bg-slate-100 text-slate-600"
@@ -211,7 +228,7 @@ export default function CalendarPage() {
             id="role-filter"
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="rounded-md border border-slate-300 px-2 py-1 text-sm text-slate-800"
+            className="min-h-[44px] rounded-md border border-slate-300 px-2 py-1 text-sm text-slate-800"
           >
             <option value="">All</option>
             {roles.map((r) => (
@@ -331,7 +348,6 @@ export default function CalendarPage() {
             setCovererName("");
             setCovererEmail("");
           }}
-          onKeyDown={(e) => e.key === "Escape" && setDetailShift(null)}
           role="dialog"
           aria-modal="true"
           aria-labelledby="shift-detail-title"
@@ -402,7 +418,10 @@ export default function CalendarPage() {
                   The poster and scheduler will be notified. Enter your details below.
                 </p>
                 {coverError && (
-                  <p className="mb-3 text-sm text-red-600" role="alert">
+                  <p className="mb-3 flex items-start gap-1.5 text-sm text-red-600" role="alert">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 flex-shrink-0 mt-0.5 text-red-600" aria-hidden>
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                    </svg>
                     {coverError}
                   </p>
                 )}
@@ -437,7 +456,7 @@ export default function CalendarPage() {
                 <div className="flex gap-3">
                   <button
                     type="button"
-                    className="flex-1 rounded-md border border-slate-300 bg-white px-4 py-2.5 font-medium text-slate-700 hover:bg-slate-50"
+                    className="flex-1 min-h-[44px] rounded-md border border-slate-300 bg-white px-4 py-2.5 font-medium text-slate-700 hover:bg-slate-50"
                     onClick={() => {
                       setShowCoverConfirm(false);
                       setCoverError(null);
@@ -448,7 +467,7 @@ export default function CalendarPage() {
                   </button>
                   <button
                     type="button"
-                    className="flex-1 rounded-md bg-blue-600 px-4 py-2.5 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                    className="flex-1 min-h-[44px] rounded-md bg-blue-600 px-4 py-2.5 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
                     disabled={coverLoading || !covererName.trim() || !covererEmail.trim()}
                     onClick={async () => {
                       setCoverError(null);
@@ -514,14 +533,14 @@ export default function CalendarPage() {
                 <div className="mt-6 flex gap-3">
                   <button
                     type="button"
-                    className="flex-1 rounded-md border border-slate-300 bg-white px-4 py-2.5 font-medium text-slate-700 hover:bg-slate-50"
+                    className="flex-1 min-h-[44px] rounded-md border border-slate-300 bg-white px-4 py-2.5 font-medium text-slate-700 hover:bg-slate-50"
                     onClick={() => setDetailShift(null)}
                   >
                     Close
                   </button>
                   <button
                     type="button"
-                    className="flex-1 rounded-md bg-blue-600 px-4 py-2.5 font-medium text-white hover:bg-blue-700"
+                    className="flex-1 min-h-[44px] rounded-md bg-blue-600 px-4 py-2.5 font-medium text-white hover:bg-blue-700"
                     onClick={() => setShowCoverConfirm(true)}
                   >
                     Cover This Shift

@@ -137,11 +137,11 @@ Goal: Live site with navigation and placeholders so every route exists.
 
 ## Feature 5: Upcoming Features and Polish
 
-- [ ] `/upcoming-features` page: list with short descriptions — User Accounts, Remove Posted Shift (poster can remove/cancel their shift; requires sign-in), Role and Location Restrictions, SMS/Text Notifications, Shift History, Admin Dashboard
-- [ ] Optional: "Request a Feature" (mailto or form)
-- [ ] Footer and/or landing link to Upcoming Features (if not already)
-- [ ] Polish: touch targets ≥ 44px; labels on form fields; error state = border + icon + text; keyboard and focus for calendar; modals dismiss with Escape; WCAG AA contrast
-- [ ] Any missing empty/error states from PRD
+- [x] `/upcoming-features` page: list with short descriptions — User Accounts, Remove Posted Shift (poster can remove/cancel their shift; requires sign-in), Role and Location Restrictions, SMS/Text Notifications, Shift History, Admin Dashboard
+- [x] Optional: "Request a Feature" (mailto or form)
+- [x] Footer and/or landing link to Upcoming Features (if not already)
+- [x] Polish: touch targets ≥ 44px; labels on form fields; error state = border + icon + text; keyboard and focus for calendar; modals dismiss with Escape; WCAG AA contrast
+- [x] Any missing empty/error states from PRD
 
 **Verify in production:** Full smoke test: post → browse → cover → add to calendar → open Upcoming Features; check /settings and /account placeholders.
 

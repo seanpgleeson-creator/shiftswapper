@@ -31,7 +31,7 @@ export default function HomePage() {
       <section className="text-center py-6 border-t border-slate-200">
         <Link
           href="/upcoming-features"
-          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+          className="inline-flex items-center min-h-[44px] text-blue-600 hover:text-blue-800 text-sm font-medium"
         >
           We&apos;re building more — see what&apos;s coming.
         </Link>

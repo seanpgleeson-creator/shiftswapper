@@ -3,6 +3,14 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
+function ErrorIcon({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={`h-5 w-5 text-red-600 ${className ?? ""}`} aria-hidden>
+      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+    </svg>
+  );
+}
+
 const LOCATIONS_STORAGE_KEY = "shiftswapper_last_location";
 const ROLE_STORAGE_KEY = "shiftswapper_last_role";
 
@@ -161,11 +169,11 @@ export default function PostPage() {
           <p className="text-slate-600 mb-6">
             Your shift on {success.date} at {success.location} has been posted. You&apos;ll be notified by email when someone picks it up.
           </p>
-          <div className="flex gap-4">
-            <Link href="/post" className="text-blue-600 hover:text-blue-800 font-medium" onClick={() => setSuccess(null)}>
+          <div className="flex flex-wrap gap-4">
+            <Link href="/post" className="inline-flex items-center min-h-[44px] text-blue-600 hover:text-blue-800 font-medium" onClick={() => setSuccess(null)}>
               Post Another
             </Link>
-            <Link href="/calendar" className="text-blue-600 hover:text-blue-800 font-medium">
+            <Link href="/calendar" className="inline-flex items-center min-h-[44px] text-blue-600 hover:text-blue-800 font-medium">
               Browse Shifts
             </Link>
           </div>
@@ -179,8 +187,9 @@ export default function PostPage() {
       <h1 className="text-2xl font-semibold text-slate-800 mb-6">Post a Shift</h1>
 
       {toast && (
-        <div className="mb-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-red-800 text-sm" role="alert">
-          {toast}
+        <div className="mb-6 flex gap-2 rounded-md border border-red-300 bg-red-50 px-4 py-3 text-red-800 text-sm" role="alert">
+          <ErrorIcon className="flex-shrink-0 mt-0.5" />
+          <span>{toast}</span>
         </div>
       )}
 
@@ -200,7 +209,12 @@ export default function PostPage() {
               errors.poster_name ? "border-red-500" : "border-slate-300"
             }`}
           />
-          {errors.poster_name && <p className="mt-1 text-sm text-red-600">{errors.poster_name}</p>}
+          {errors.poster_name && (
+            <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600">
+              <ErrorIcon className="flex-shrink-0 mt-0.5" />
+              {errors.poster_name}
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -219,7 +233,12 @@ export default function PostPage() {
                 errors.shift_date ? "border-red-500" : "border-slate-300"
               }`}
             />
-            {errors.shift_date && <p className="mt-1 text-sm text-red-600">{errors.shift_date}</p>}
+            {errors.shift_date && (
+              <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600">
+                <ErrorIcon className="flex-shrink-0 mt-0.5" />
+                {errors.shift_date}
+              </p>
+            )}
           </div>
         </div>
 
@@ -239,7 +258,12 @@ export default function PostPage() {
                 errors.start_time ? "border-red-500" : "border-slate-300"
               }`}
             />
-            {errors.start_time && <p className="mt-1 text-sm text-red-600">{errors.start_time}</p>}
+            {errors.start_time && (
+              <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600">
+                <ErrorIcon className="flex-shrink-0 mt-0.5" />
+                {errors.start_time}
+              </p>
+            )}
           </div>
           <div>
             <label htmlFor="end_time" className="block text-sm font-medium text-slate-700 mb-1">
@@ -257,7 +281,10 @@ export default function PostPage() {
               }`}
             />
             {(errors.end_time || endTimeError) && (
-              <p className="mt-1 text-sm text-red-600">{errors.end_time || endTimeError}</p>
+              <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600">
+                <ErrorIcon className="flex-shrink-0 mt-0.5" />
+                {errors.end_time || endTimeError}
+              </p>
             )}
           </div>
         </div>
@@ -283,7 +310,12 @@ export default function PostPage() {
               </option>
             ))}
           </select>
-          {errors.location && <p className="mt-1 text-sm text-red-600">{errors.location}</p>}
+          {errors.location && (
+            <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600">
+              <ErrorIcon className="flex-shrink-0 mt-0.5" />
+              {errors.location}
+            </p>
+          )}
         </div>
 
         <div>
@@ -307,7 +339,12 @@ export default function PostPage() {
               </option>
             ))}
           </select>
-          {errors.role && <p className="mt-1 text-sm text-red-600">{errors.role}</p>}
+          {errors.role && (
+            <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600">
+              <ErrorIcon className="flex-shrink-0 mt-0.5" />
+              {errors.role}
+            </p>
+          )}
         </div>
 
         <div>
@@ -325,7 +362,12 @@ export default function PostPage() {
               errors.poster_email ? "border-red-500" : "border-slate-300"
             }`}
           />
-          {errors.poster_email && <p className="mt-1 text-sm text-red-600">{errors.poster_email}</p>}
+          {errors.poster_email && (
+            <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600">
+              <ErrorIcon className="flex-shrink-0 mt-0.5" />
+              {errors.poster_email}
+            </p>
+          )}
         </div>
 
         <div>
@@ -343,13 +385,18 @@ export default function PostPage() {
             className={`block w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:ring-2 focus:ring-blue-500`}
           />
           <p className="mt-1 text-xs text-slate-500">Optional — we&apos;ll add text notifications soon.</p>
-          {errors.poster_phone && <p className="mt-1 text-sm text-red-600">{errors.poster_phone}</p>}
+          {errors.poster_phone && (
+            <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600">
+              <ErrorIcon className="flex-shrink-0 mt-0.5" />
+              {errors.poster_phone}
+            </p>
+          )}
         </div>
 
         <button
           type="submit"
           disabled={!allValid || submitting}
-          className="w-full rounded-md bg-blue-600 px-4 py-2.5 font-medium text-white shadow-sm hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none"
+          className="w-full min-h-[44px] rounded-md bg-blue-600 px-4 py-2.5 font-medium text-white shadow-sm hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none"
         >
           {submitting ? "Posting…" : "Post Shift"}
         </button>

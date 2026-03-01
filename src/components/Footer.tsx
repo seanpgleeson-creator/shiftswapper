@@ -6,7 +6,7 @@ export function Footer() {
       <div className="max-w-4xl mx-auto px-4 py-6">
         <Link
           href="/upcoming-features"
-          className="text-slate-600 hover:text-slate-900 text-sm"
+          className="inline-flex items-center min-h-[44px] text-slate-600 hover:text-slate-900 text-sm"
         >
           Upcoming Features
         </Link>
