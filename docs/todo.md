@@ -151,21 +151,21 @@ Goal: Live site with navigation and placeholders so every route exists.
 
 ### Backend
 
-- [ ] Add `users` table (first_name, last_name, email, phone, position, role member|admin); migrations
-- [ ] POST /api/auth/signup — body: first_name, last_name, email, position, phone (optional), password or magic link; create user role 'member'; send signup notification email to admin
-- [ ] POST /api/auth/login, POST /api/auth/logout; GET /api/auth/session or GET /api/me — return current user; 401 if unauthenticated
-- [ ] POST /api/shifts: when authenticated, poster from session, body only shift_date, start_time, end_time, location; set posted_by_user_id
-- [ ] PATCH /api/shifts/:id/cover: when authenticated, coverer from session; body optional
-- [ ] GET /api/shifts: when authenticated as member, filter to shifts where role = user.position
+- [x] Add `users` table (first_name, last_name, email, phone, position, role member|admin); migrations
+- [x] POST /api/auth/signup — body: first_name, last_name, email, position, phone (optional), password or magic link; create user role 'member'; send signup notification email to admin
+- [x] POST /api/auth/login, POST /api/auth/logout; GET /api/auth/session or GET /api/me — return current user; 401 if unauthenticated
+- [x] POST /api/shifts: when authenticated, poster from session, body only shift_date, start_time, end_time, location; set posted_by_user_id
+- [x] PATCH /api/shifts/:id/cover: when authenticated, coverer from session; body optional
+- [x] GET /api/shifts: when authenticated as member, filter to shifts where role = user.position
 
 ### Frontend
 
-- [ ] /signup — form: first name, last name, email, position (dropdown from GET /api/roles), phone optional, password (or magic link)
-- [ ] /login — email + password (or magic link); link to sign up
-- [ ] Nav: show "Log in" and "Sign up" when unauthenticated; "Account" and "Log out" when authenticated
-- [ ] /post when logged in: hide or read-only name, email, Title/Role; submit minimal body
-- [ ] Cover dialog when logged in: no name/email fields; "You're covering as [Name]. The poster and scheduler will be notified." Single Confirm
-- [ ] Calendar when logged in: show only shifts for user's position (role filter default or hidden)
+- [x] /signup — form: first name, last name, email, position (dropdown from GET /api/roles), phone optional, password (or magic link)
+- [x] /login — email + password (or magic link); link to sign up
+- [x] Nav: show "Log in" and "Sign up" when unauthenticated; "Account" and "Log out" when authenticated
+- [x] /post when logged in: hide or read-only name, email, Title/Role; submit minimal body
+- [x] Cover dialog when logged in: no name/email fields; "You're covering as [Name]. The poster and scheduler will be notified." Single Confirm
+- [x] Calendar when logged in: show only shifts for user's position (role filter default or hidden)
 
 **Verify in production:** Sign up → log in → post shift (no name/email/role) → browse (only my position) → cover (no name/email).
 
