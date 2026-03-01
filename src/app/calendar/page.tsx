@@ -57,6 +57,7 @@ export default function CalendarPage() {
   const [coverError, setCoverError] = useState<string | null>(null);
   const [coverLoading, setCoverLoading] = useState(false);
   const [coverSuccess, setCoverSuccess] = useState(false);
+  const [coverGoogleCalendarUrl, setCoverGoogleCalendarUrl] = useState<string | null>(null);
 
   const [locations, setLocations] = useState<string[]>([]);
   const [roles, setRoles] = useState<string[]>([]);
@@ -325,6 +326,7 @@ export default function CalendarPage() {
             setDetailShift(null);
             setShowCoverConfirm(false);
             setCoverSuccess(false);
+            setCoverGoogleCalendarUrl(null);
             setCoverError(null);
             setCovererName("");
             setCovererEmail("");
@@ -343,7 +345,7 @@ export default function CalendarPage() {
                 <h2 id="shift-detail-title" className="text-xl font-semibold text-slate-800 mb-2">
                   You&apos;re covering this shift!
                 </h2>
-                <dl className="space-y-2 text-slate-700 mb-6">
+                <dl className="space-y-2 text-slate-700 mb-4">
                   <div>
                     <dt className="text-sm text-slate-500">Date</dt>
                     <dd>{detailShift.shift_date}</dd>
@@ -359,12 +361,33 @@ export default function CalendarPage() {
                     <dd>{detailShift.location}</dd>
                   </div>
                 </dl>
+                <p className="text-sm font-medium text-slate-700 mb-2">Add to calendar</p>
+                <div className="flex flex-col gap-2 mb-6">
+                  {coverGoogleCalendarUrl && (
+                    <a
+                      href={coverGoogleCalendarUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 min-h-[44px]"
+                    >
+                      Add to Google Calendar
+                    </a>
+                  )}
+                  <a
+                    href={`/api/shifts/${detailShift.id}/calendar`}
+                    download
+                    className="flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 min-h-[44px]"
+                  >
+                    Add to Outlook / Apple Calendar
+                  </a>
+                </div>
                 <button
                   type="button"
-                  className="w-full rounded-md bg-blue-600 px-4 py-2.5 font-medium text-white hover:bg-blue-700"
+                  className="w-full rounded-md bg-blue-600 px-4 py-2.5 font-medium text-white hover:bg-blue-700 min-h-[44px]"
                   onClick={() => {
                     setDetailShift(null);
                     setCoverSuccess(false);
+                    setCoverGoogleCalendarUrl(null);
                   }}
                 >
                   Back to Calendar
@@ -445,6 +468,7 @@ export default function CalendarPage() {
                           return;
                         }
                         setCoverSuccess(true);
+                        setCoverGoogleCalendarUrl(data.google_calendar_url ?? null);
                         refetchShifts();
                       } catch {
                         setCoverError("Something went wrong. Please try again.");

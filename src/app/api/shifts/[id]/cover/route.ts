@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { coverShiftSchema } from "@/lib/validation";
 import { sendCoverEmails } from "@/lib/email";
+import { buildGoogleCalendarUrl } from "@/lib/calendar";
 
 export async function PATCH(
   request: NextRequest,
@@ -80,6 +81,19 @@ export async function PATCH(
     console.error("Cover emails failed:", emailResult.error);
   }
 
+  const timezone = settings?.timezone ?? "America/Chicago";
+  const googleCalendarUrl = buildGoogleCalendarUrl(
+    {
+      shiftDate: updated.shiftDate,
+      startTime: updated.startTime,
+      endTime: updated.endTime,
+      location: updated.location,
+      role: updated.role,
+      posterName: updated.posterName,
+    },
+    timezone
+  );
+
   const response: Record<string, unknown> = {
     id: updated.id,
     status: updated.status,
@@ -91,6 +105,7 @@ export async function PATCH(
     poster_name: updated.posterName,
     coverer_name: updated.covererName,
     created_at: updated.createdAt.toISOString(),
+    google_calendar_url: googleCalendarUrl,
   };
   if (!emailResult.posterOk || !emailResult.schedulerOk) {
     response.email_warning = "One or more notifications could not be sent.";

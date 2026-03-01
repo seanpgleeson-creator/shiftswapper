@@ -163,6 +163,7 @@ Tapping a shift card opens the Shift Detail view.
 | Feature                        | Description                                                                                  |
 |--------------------------------|----------------------------------------------------------------------------------------------|
 | User Accounts                  | Sign in with your own account to manage your posted and covered shifts in one place.         |
+| Remove Posted Shift            | Remove or cancel a shift you posted (e.g., you no longer need coverage). Requires sign-in.   |
 | Role and Location Restrictions | Ensure only team members approved for a specific role or location can pick up those shifts.   |
 | SMS/Text Notifications         | Get text messages when your shift is covered or new shifts are posted at your location.       |
 | Shift History                  | View a log of past shift swaps for your records.                                             |

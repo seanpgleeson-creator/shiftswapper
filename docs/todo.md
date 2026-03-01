@@ -122,12 +122,12 @@ Goal: Live site with navigation and placeholders so every route exists.
 
 ### Backend
 
-- [ ] `GET /api/shifts/:id/calendar` — 404 if missing, 400 if not covered; generate .ics with ical-generator (timezone from settings); headers: `Content-Type: text/calendar`, `Content-Disposition: attachment; filename="shift-....ics"`
+- [x] `GET /api/shifts/:id/calendar` — 404 if missing, 400 if not covered; generate .ics with ical-generator (timezone from settings); headers: `Content-Type: text/calendar`, `Content-Disposition: attachment; filename="shift-....ics"`
 
 ### Frontend
 
-- [ ] After cover success: "Add to Google Calendar" — build `calendar.google.com/calendar/render?action=TEMPLATE&...` from shift data (client-side)
-- [ ] "Add to Outlook" / "Add to Apple Calendar" — link to `GET /api/shifts/:id/calendar` to download .ics
+- [x] After cover success: "Add to Google Calendar" — build `calendar.google.com/calendar/render?action=TEMPLATE&...` from shift data (client-side)
+- [x] "Add to Outlook" / "Add to Apple Calendar" — link to `GET /api/shifts/:id/calendar` to download .ics
 
 **PARALLEL:** .ics endpoint and "Add to Calendar" buttons can be built in parallel.
 
@@ -137,7 +137,7 @@ Goal: Live site with navigation and placeholders so every route exists.
 
 ## Feature 5: Upcoming Features and Polish
 
-- [ ] `/upcoming-features` page: list with short descriptions — User Accounts, Role and Location Restrictions, SMS/Text Notifications, Shift History, Admin Dashboard
+- [ ] `/upcoming-features` page: list with short descriptions — User Accounts, Remove Posted Shift (poster can remove/cancel their shift; requires sign-in), Role and Location Restrictions, SMS/Text Notifications, Shift History, Admin Dashboard
 - [ ] Optional: "Request a Feature" (mailto or form)
 - [ ] Footer and/or landing link to Upcoming Features (if not already)
 - [ ] Polish: touch targets ≥ 44px; labels on form fields; error state = border + icon + text; keyboard and focus for calendar; modals dismiss with Escape; WCAG AA contrast

@@ -210,6 +210,7 @@ Emails are sent server-side via Resend/SendGrid. If sending fails, the cover is 
 ## 10. Future Roadmap
 
 - **User accounts:** Sign-in (e.g., NextAuth, Clerk); shifts tied to user; name/email pre-filled from profile.
+- **Remove posted shift:** Allow the shift poster to remove or cancel a shift they posted (e.g., they no longer need coverage). Requires sign-in so the app can identify the poster; only the poster (or an admin) can remove their shift.
 - **Role and location restrictions:** Only users with matching allowed_locations and allowed_roles can cover a given shift; 403 when not allowed.
 - **SMS notifications:** Use poster_phone (and future coverer_phone); Twilio (or similar); toggle in settings.
 - **Admin dashboard:** UI for scheduler email, timezone, locations/roles, and eventually user permissions.
