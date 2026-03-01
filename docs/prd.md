@@ -14,12 +14,15 @@ A pharmacy workplace migrated from When I Work to UKG. UKG does not support the 
 
 ShiftSwapper is a lightweight web application that lets pharmacy team members:
 
-- **Post a shift** they need covered (date, time, location, role, contact info).
-- **Browse open shifts** on a calendar and claim one with one click.
+- **Sign up and log in** with first name, last name, email, position, and phone. When logged in, post and cover shifts without re-entering those details.
+- **Post a shift** they need covered (date, time, location, role, contact info — or date/time/location only when logged in).
+- **Browse open shifts** on a calendar and claim one with one click. The calendar shows only shifts for the user's position (Pharmacist now; Technician, Cashier when added).
 - **Get notified by email** when a shift is covered (poster) or when a coverage event occurs (scheduler).
 - **Add a covered shift to their calendar** (Outlook, Gmail, iCal) via a downloadable .ics file or Google Calendar deep link.
+- **Optional calendar sync:** Subscribe to a feed of covered shifts so they appear in the user's calendar automatically.
+- **Admin:** Admins can see all shifts, add or remove shifts, and receive an email when someone signs up so they can validate the user is an employee.
 
-No login is required for the MVP. The app is mobile-first so staff can use it on phones between tasks.
+The app is mobile-first so staff can use it on phones between tasks. Unauthenticated users can still post and browse (entering name/email when required); logged-in users get a streamlined experience.
 
 ### Intended Audience
 
@@ -30,12 +33,13 @@ No login is required for the MVP. The app is mobile-first so staff can use it on
 
 ## 2. Personas
 
-| Persona | MVP Role | Description |
-|---------|----------|-------------|
-| **Shift Poster** | Primary | Team member who needs a shift covered. Fills out the Post a Shift form with date, time, location, role, name, and email. Receives an email when someone covers the shift. |
-| **Shift Browser** | Primary | Team member looking for hours. Uses the calendar to find open shifts, views shift details, and clicks "Cover This Shift." Provides name and email in the confirmation dialog. Can download a calendar invite after covering. |
+| Persona | Role | Description |
+|---------|------|-------------|
+| **Shift Poster** | Primary | Team member who needs a shift covered. When unauthenticated: fills out full form (date, time, location, role, name, email). When logged in: form is date, time, location only; name/email/position from account. Receives an email when someone covers the shift. |
+| **Shift Browser** | Primary | Team member looking for hours. Uses the calendar to find open shifts (filtered by their position when logged in), views shift details, and clicks "Cover This Shift." When unauthenticated: provides name and email in the dialog. When logged in: one-click confirm with no name/email prompt. Can download a calendar invite or subscribe to a feed of covered shifts. |
+| **Member (logged-in)** | Primary | Has an account; posts shifts with date/time/location only; sees only shifts for their position; covers with one click (no name/email); can use calendar sync (feed URL for covered shifts). |
 | **Scheduler** | Primary | Single recipient (email in settings). Receives an email every time a shift is covered, with poster and coverer details, so they can update UKG/the official schedule. |
-| **Admin** | Future | Will manage user accounts, assign role/location restrictions, and configure scheduler email and other settings. Not in MVP; placeholders (e.g., `/settings`, `/account`) and an Upcoming Features page set expectations. |
+| **Admin** | Primary | Logs in as admin; sees all shifts (open, covered, cancelled); can add or remove shifts; receives an email when a new user signs up to validate they are an employee. |
 
 ---
 
@@ -44,21 +48,21 @@ No login is required for the MVP. The app is mobile-first so staff can use it on
 ### In Scope
 
 - Landing page with two actions: Post a Shift, Browse Shifts.
-- Post a Shift form (all fields and validation as specified).
-- Calendar view of open shifts with month navigation, filters (location, role), and day selection.
-- Shift detail (modal/sheet) with "Cover This Shift" and confirmation dialog (coverer name + email).
+- **User sign-up** (first name, last name, email, position, phone) and **login**; when logged in, post without name/email/position and cover without name/email; calendar filtered by user position.
+- Post a Shift form (full fields when unauthenticated; date, time, location only when authenticated).
+- Calendar view of open shifts with month navigation, filters (location, role), and day selection; when logged in as member, only shifts for the user's position.
+- Shift detail (modal/sheet) with "Cover This Shift" and confirmation dialog (coverer name + email when unauthenticated; one-click confirm when authenticated).
 - Notification emails to poster and scheduler when a shift is covered.
-- Calendar invite: .ics download (Outlook, Apple) and client-side Google Calendar link.
+- Calendar invite: .ics download (Outlook, Apple) and client-side Google Calendar link; **calendar sync** (feed URL for covered shifts so user can subscribe in their calendar app).
+- **Admin persona:** see all shifts, add or remove shifts, receive notification when someone signs up.
 - Upcoming Features page describing the roadmap.
-- API for shifts (create, list, get, cover) and reference data (locations, roles).
+- API for shifts (create, list, get, cover) and reference data (locations, roles); auth endpoints (signup, login, session/me); GET /api/me/calendar for covered-shifts feed.
 - Settings table with scheduler email and timezone; seeded manually for MVP.
 
-### Out of Scope (MVP)
+### Out of Scope
 
-- User accounts and authentication.
-- Role/location restrictions (who can cover which shifts).
+- Fine-grained role/location restrictions (allowed_locations, allowed_roles per user); current design uses position-only filtering.
 - SMS/text notifications (phone field exists but is optional and unused for notifications).
-- Admin UI to edit settings.
 - Shift history or audit log in the UI.
 
 ---
@@ -119,7 +123,32 @@ No login is required for the MVP. The app is mobile-first so staff can use it on
 | ID | Requirement |
 |----|-------------|
 | FR-6.1 | A settings table stores scheduler_email and timezone (default America/Chicago). For MVP this row is seeded manually; no admin UI. |
-| FR-6.2 | Routes `/settings` and `/account` return a "Coming soon" placeholder, not 404. |
+| FR-6.2 | Routes `/settings` and `/account` return a "Coming soon" placeholder when not implemented, not 404. |
+
+### 4.7 Authentication and member experience
+
+| ID | Requirement |
+|----|-------------|
+| FR-Auth.1 | User can sign up with first name, last name, email, position (dropdown: Pharmacist initially; list from API), phone (optional). Admin receives an email on signup. |
+| FR-Auth.2 | User can log in; session is used for subsequent requests. |
+| FR-Auth.3 | When logged in, Post a Shift form does not ask for name, email, or position (pre-filled from account). |
+| FR-Auth.4 | When logged in, Cover flow does not ask for name or email (taken from session). |
+| FR-Auth.5 | Calendar lists only shifts whose role matches the logged-in user's position (e.g. Pharmacist sees only Pharmacist shifts); when roles expand (Technician, Cashier), filter by position. |
+
+### 4.8 Admin
+
+| ID | Requirement |
+|----|-------------|
+| FR-Admin.1 | Admin can view all shifts (open, covered, cancelled). |
+| FR-Admin.2 | Admin can add a shift (same data as post; poster can be specified or admin). |
+| FR-Admin.3 | Admin can remove or cancel a shift. |
+| FR-Admin.4 | Admin receives an email when a new user signs up (to validate employee). |
+
+### 4.9 Calendar sync
+
+| ID | Requirement |
+|----|-------------|
+| FR-CalSync.1 | User can get a calendar feed URL that includes all shifts they have covered; subscribing in a calendar app shows those shifts without manual download per shift. |
 
 ---
 
@@ -132,7 +161,7 @@ No login is required for the MVP. The app is mobile-first so staff can use it on
 | NFR-3 | **Accessibility:** Labels on all form fields; error state indicated by more than color (icon + text); keyboard navigation for calendar; modals trap focus and dismiss with Escape; WCAG AA contrast. |
 | NFR-4 | **API:** Poster and coverer email addresses are never included in API response bodies. |
 | NFR-5 | **API errors** use a consistent JSON envelope: `{ "error": "...", "code": "..." }`. Validation errors include a `fields` array. |
-| NFR-6 | **No authentication** in MVP; all shift and reference-data endpoints are unauthenticated. |
+| NFR-6 | **Authentication** is supported; when authenticated, shift and cover endpoints use session data. Unauthenticated users can still post and cover with inline name/email. |
 | NFR-7 | **Visual design:** Clean, clinical tone (healthcare audience); calm palette (blues, whites, grays); minimal chrome; 4/8px spacing; single sans-serif, two weights. |
 
 ---
@@ -175,9 +204,19 @@ No login is required for the MVP. The app is mobile-first so staff can use it on
 | timezone | string | Default America/Chicago |
 | created_at, updated_at | timestamptz | |
 
-### users (future)
+### users
 
-Documented for extension: id, name, email, phone, role (member/admin), allowed_locations (JSONB), allowed_roles (JSONB). Shifts will get `posted_by_user_id` when auth exists.
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | PK |
+| first_name, last_name | string | |
+| email | string | UNIQUE, login identifier |
+| phone | string | Optional |
+| position | string | e.g. Pharmacist; from roles list |
+| role | string | member \| admin |
+| created_at, updated_at | timestamptz | |
+
+Shifts: add `posted_by_user_id` (nullable FK to users).
 
 ---
 
@@ -186,12 +225,18 @@ Documented for extension: id, name, email, phone, role (member/admin), allowed_l
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | /api/locations | List of 10 pharmacy location names |
-| GET | /api/roles | List of role names (MVP: Pharmacist) |
-| POST | /api/shifts | Create shift (body: poster_name, poster_email, poster_phone?, location, role, shift_date, start_time, end_time) |
-| GET | /api/shifts | List open shifts; query: from, to, location, role |
+| GET | /api/roles | List of role/position names (Pharmacist; extend with Technician, Cashier) |
+| POST | /api/auth/signup | Sign up (first_name, last_name, email, position, phone?, password or magic link) |
+| POST | /api/auth/login | Log in; establish session |
+| POST | /api/auth/logout | Log out; clear session |
+| GET | /api/auth/session or /api/me | Current user (401 if unauthenticated) |
+| GET | /api/me/calendar | Authenticated .ics feed of all shifts the user has covered (calendar sync) |
+| POST | /api/shifts | Create shift; when authenticated, poster from session; else full body |
+| GET | /api/shifts | List shifts; when member: filter by user position; when admin: can request all (e.g. status=all) |
 | GET | /api/shifts/:id | Shift detail (no email in response) |
-| PATCH | /api/shifts/:id/cover | Cover shift (body: coverer_name, coverer_email); triggers emails |
+| PATCH | /api/shifts/:id/cover | Cover shift; when authenticated coverer from session; else body: coverer_name, coverer_email |
 | GET | /api/shifts/:id/calendar | Download .ics for covered shift |
+| PATCH or DELETE | /api/shifts/:id | Admin: cancel or remove shift |
 | GET / PATCH | /api/settings | Future, admin-only |
 
 ---
@@ -209,11 +254,11 @@ Emails are sent server-side via Resend/SendGrid. If sending fails, the cover is 
 
 ## 10. Future Roadmap
 
-- **User accounts:** Sign-in (e.g., NextAuth, Clerk); shifts tied to user; name/email pre-filled from profile.
-- **Remove posted shift:** Allow the shift poster to remove or cancel a shift they posted (e.g., they no longer need coverage). Requires sign-in so the app can identify the poster; only the poster (or an admin) can remove their shift.
-- **Role and location restrictions:** Only users with matching allowed_locations and allowed_roles can cover a given shift; 403 when not allowed.
+- **User accounts, admin, calendar sync:** In scope per this PRD (sign-up, login, position-filtered calendar, admin see all/add/remove, signup notification, covered-shifts feed).
+- **Remove posted shift:** Allow the shift poster to remove or cancel a shift they posted. Requires sign-in; only the poster or admin can remove.
+- **Role and location restrictions:** Optional allowed_locations and allowed_roles per user; 403 when not allowed to cover a given shift.
 - **SMS notifications:** Use poster_phone (and future coverer_phone); Twilio (or similar); toggle in settings.
-- **Admin dashboard:** UI for scheduler email, timezone, locations/roles, and eventually user permissions.
+- **Admin dashboard:** UI for scheduler email, timezone, locations/roles, and user permissions.
 - **Background jobs:** Move email/SMS to a queue (e.g., BullMQ) for retries and to avoid blocking the request.
 - **Audit log:** shift_events table (created/covered/cancelled, actor, timestamp) for scheduler and compliance.
 

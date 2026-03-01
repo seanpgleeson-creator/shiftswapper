@@ -147,6 +147,65 @@ Goal: Live site with navigation and placeholders so every route exists.
 
 ---
 
+## Feature 6: User accounts (sign-up / login)
+
+### Backend
+
+- [ ] Add `users` table (first_name, last_name, email, phone, position, role member|admin); migrations
+- [ ] POST /api/auth/signup — body: first_name, last_name, email, position, phone (optional), password or magic link; create user role 'member'; send signup notification email to admin
+- [ ] POST /api/auth/login, POST /api/auth/logout; GET /api/auth/session or GET /api/me — return current user; 401 if unauthenticated
+- [ ] POST /api/shifts: when authenticated, poster from session, body only shift_date, start_time, end_time, location; set posted_by_user_id
+- [ ] PATCH /api/shifts/:id/cover: when authenticated, coverer from session; body optional
+- [ ] GET /api/shifts: when authenticated as member, filter to shifts where role = user.position
+
+### Frontend
+
+- [ ] /signup — form: first name, last name, email, position (dropdown from GET /api/roles), phone optional, password (or magic link)
+- [ ] /login — email + password (or magic link); link to sign up
+- [ ] Nav: show "Log in" and "Sign up" when unauthenticated; "Account" and "Log out" when authenticated
+- [ ] /post when logged in: hide or read-only name, email, Title/Role; submit minimal body
+- [ ] Cover dialog when logged in: no name/email fields; "You're covering as [Name]. The poster and scheduler will be notified." Single Confirm
+- [ ] Calendar when logged in: show only shifts for user's position (role filter default or hidden)
+
+**Verify in production:** Sign up → log in → post shift (no name/email/role) → browse (only my position) → cover (no name/email).
+
+---
+
+## Feature 7: Admin
+
+### Backend
+
+- [ ] Admin role: when user.role === 'admin', GET /api/shifts can return all shifts (e.g. query status=all or admin=true)
+- [ ] Admin can POST /api/shifts (add shift; same shape, poster can be specified)
+- [ ] Admin can PATCH /api/shifts/:id (e.g. status: 'cancelled') or DELETE to remove/cancel shift
+- [ ] Signup notification email to admin (scheduler_email or admin_notification_email) when POST /api/auth/signup succeeds — if not already done in Feature 6
+
+### Frontend
+
+- [ ] /admin (or admin section under /settings): visible only when user.role === 'admin'
+- [ ] Admin: list or calendar view of all shifts (open, covered, cancelled); no position filter
+- [ ] Admin: add shift form (date, time, location, role, poster if needed)
+- [ ] Admin: remove/cancel shift action from list or detail with confirmation
+
+**Verify in production:** Log in as admin → see all shifts → add a shift → remove/cancel a shift. New signup triggers admin email.
+
+---
+
+## Feature 8: Calendar sync
+
+### Backend
+
+- [ ] GET /api/me/calendar (authenticated): return .ics feed of all shifts the current user has covered (same format as GET /api/shifts/:id/calendar); Content-Type text/calendar; optional token-based URL for subscription if needed
+
+### Frontend
+
+- [ ] Account page or post-cover success: "Sync your calendar" — copy and instructions; "Copy feed URL" button for authenticated feed URL so user can subscribe in Google Calendar / Outlook / Apple Calendar
+- [ ] Explain that once subscribed, covered shifts appear automatically without downloading a file per shift
+
+**Verify in production:** Log in → cover a shift → copy feed URL → add to calendar app → confirm covered shift appears; cover another shift → confirm it appears in feed.
+
+---
+
 ## Parallel Work Summary
 
 | Phase / Feature | Can run in parallel |
@@ -157,5 +216,8 @@ Goal: Live site with navigation and placeholders so every route exists.
 | **Feature 2: Browse Shifts** | GET /api/shifts \| Calendar UI (grid, filters, day list, cards) |
 | **Feature 3: Cover a Shift** | Cover API (GET :id, PATCH, email) \| Detail modal, confirm dialog, success view |
 | **Feature 4: Calendar Invites** | GET :id/calendar (.ics) \| Add to Calendar buttons (Google URL + .ics link) |
+| **Feature 6: User accounts**      | Auth (signup, login, session) \| Post/cover/calendar behavior when authenticated |
+| **Feature 7: Admin**             | Admin shifts API \| Admin UI (all shifts, add, remove) |
+| **Feature 8: Calendar sync**      | GET /api/me/calendar \| Copy feed URL + instructions |
 
 Sequence remains feature-driven: finish each feature end-to-end and verify in production before moving to the next.

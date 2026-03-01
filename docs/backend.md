@@ -40,6 +40,7 @@ The central table. One row per posted shift.
 | status        | VARCHAR     | NOT NULL, DEFAULT 'open' | open / covered / cancelled                    |
 | coverer_name  | VARCHAR     | NULL                     | Populated when shift is covered               |
 | coverer_email | VARCHAR     | NULL                     | Populated when shift is covered               |
+| posted_by_user_id | UUID     | NULL, FK → users(id)     | Set when shift is posted by a logged-in user  |
 | created_at    | TIMESTAMPTZ | NOT NULL, DEFAULT now()  |                                               |
 | covered_at    | TIMESTAMPTZ | NULL                     | Populated when shift is covered               |
 
@@ -57,22 +58,23 @@ A single-row configuration table.
 
 For MVP this row is seeded manually. A future settings UI will allow the admin to update it.
 
-### 3.3 users (future placeholder)
+### 3.3 users
 
-Not implemented in MVP. Schema documented here so the shifts table can be extended with a FK without a redesign.
+Stores signed-up team members and admins. Used for authentication and to pre-fill poster/coverer data.
 
-| Column            | Type        | Notes                                            |
-|-------------------|-------------|--------------------------------------------------|
-| id                | UUID        | PK                                               |
-| name              | VARCHAR     | NOT NULL                                         |
-| email             | VARCHAR     | UNIQUE, NOT NULL                                 |
-| phone             | VARCHAR     | NULL                                             |
-| role              | VARCHAR     | 'member' or 'admin'                              |
-| allowed_locations | JSONB       | Array of location strings this user may cover    |
-| allowed_roles     | JSONB       | Array of role strings this user may cover        |
-| created_at        | TIMESTAMPTZ |                                                  |
+| Column     | Type        | Constraints              | Notes                                            |
+|------------|-------------|--------------------------|--------------------------------------------------|
+| id         | UUID        | PK, DEFAULT gen_random_uuid() |                                             |
+| first_name | VARCHAR     | NOT NULL                 |                                                  |
+| last_name  | VARCHAR     | NOT NULL                 |                                                  |
+| email      | VARCHAR     | UNIQUE, NOT NULL         | Login identifier                                 |
+| phone      | VARCHAR     | NULL                     | Optional                                         |
+| position   | VARCHAR     | NOT NULL                 | e.g. "Pharmacist"; validated against roles list  |
+| role       | VARCHAR     | NOT NULL, DEFAULT 'member' | 'member' or 'admin'                          |
+| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT now()  |                                                  |
+| updated_at | TIMESTAMPTZ | NOT NULL                 |                                                  |
 
-When auth is introduced, the shifts table gains `posted_by_user_id UUID REFERENCES users(id)`.
+Calendar filtering for members is by `position` only: a member sees only shifts where `shift.role` = user's `position`. When `posted_by_user_id` is set on a shift, poster name/email/phone can be stored as a snapshot at post time (so historical shifts stay correct if the user later changes profile) or derived from the user record at read time; document the choice in implementation.
 
 ---
 
@@ -95,13 +97,15 @@ Richfield Pharmacy
 North Loop Pharmacy
 ```
 
-### Roles (MVP)
+### Roles / positions
+
+The same list is used for shift `role` and user `position`. Initial value: `["Pharmacist"]`; extend later with e.g. Technician, Cashier.
 
 ```
 Pharmacist
 ```
 
-Both lists are returned by dedicated API endpoints so the frontend never hardcodes them.
+GET /api/roles returns this list. It is used for the sign-up position dropdown and for shift role validation.
 
 ---
 
@@ -119,19 +123,34 @@ Both lists are returned by dedicated API endpoints so the frontend never hardcod
 { "locations": ["Red Pharmacy", "CSC Pharmacy", "..."] }
 ```
 
-### 5.2 Shifts
+### 5.2 Auth
+
+Use session-based auth (e.g. NextAuth.js with credentials or magic link, or Clerk). Session identifies `user.id` and `user.role`; middleware or session check injects the current user on protected routes.
+
+| Method | Path                 | Auth Required | Description                                                                 |
+|--------|----------------------|---------------|-----------------------------------------------------------------------------|
+| POST   | /api/auth/signup     | No            | Body: first_name, last_name, email, password (or magic link), position, phone (optional). Create user with role 'member'. On success: send notification email to admin. Return session or redirect. |
+| POST   | /api/auth/login      | No            | Credentials or magic link; establish session.                               |
+| POST   | /api/auth/logout     | No            | Clear session.                                                              |
+| GET    | /api/auth/session or /api/me | Session  | Return current user (id, first_name, last_name, email, position, phone, role). 401 if unauthenticated. |
+
+### 5.3 Shifts
 
 | Method | Path                      | Auth Required | Description                                          |
 |--------|---------------------------|---------------|------------------------------------------------------|
-| POST   | /api/shifts               | No (MVP)      | Create a new open shift posting                      |
-| GET    | /api/shifts               | No            | List open shifts; filterable by date range, location, role |
+| POST   | /api/shifts               | No            | Create a new open shift posting (see body rules below) |
+| GET    | /api/shifts               | No            | List shifts; behavior depends on auth (see below)     |
 | GET    | /api/shifts/:id           | No            | Get full details for a single shift                  |
-| PATCH  | /api/shifts/:id/cover     | No (MVP)      | Mark shift as covered; triggers notifications        |
+| PATCH  | /api/shifts/:id/cover     | No            | Mark shift as covered; triggers notifications        |
 | GET    | /api/shifts/:id/calendar  | No            | Download .ics file for a covered shift               |
 
 #### POST /api/shifts
 
-Request body:
+**When authenticated:** poster_name, poster_email, poster_phone, and role (position) come from the session. Request body only needs: shift_date, start_time, end_time, location. Set `posted_by_user_id` to current user. Optionally allow role override in body; otherwise use user.position.
+
+**When unauthenticated:** full body required:
+
+Request body (unauthenticated):
 ```json
 {
   "poster_name": "Jane Smith",
@@ -164,6 +183,12 @@ Note: `poster_email` and `poster_phone` are NOT returned in any response body.
 
 #### GET /api/shifts
 
+**When authenticated as member:** Filter results to shifts where `role` = current user's `position` (e.g. Pharmacist sees only Pharmacist shifts; when Technician, Cashier exist, they see only their role). Query params from, to, location still apply. Only `status = 'open'` by default unless admin.
+
+**When authenticated as admin:** Can see all shifts (open, covered, cancelled). Support query param e.g. `status=all` or `admin=true` to return all statuses.
+
+**When unauthenticated:** Return all open shifts; filterable by date range, location, role as today.
+
 Query parameters:
 
 | Param     | Type   | Description                                    |
@@ -172,12 +197,17 @@ Query parameters:
 | to        | date   | End of date range (ISO, inclusive)             |
 | location  | string | Filter to a specific location                  |
 | role      | string | Filter to a specific role                      |
+| status    | string | (Admin) e.g. 'all' to include covered/cancelled |
 
-Only shifts with `status = 'open'` are returned by default.
+Only shifts with `status = 'open'` are returned by default for members and unauthenticated users.
 
 #### PATCH /api/shifts/:id/cover
 
-Request body:
+**When authenticated:** coverer_name, coverer_email (and optionally coverer_phone) come from session; body can be empty or only a confirmation flag.
+
+**When unauthenticated:** body required:
+
+Request body (unauthenticated):
 ```json
 {
   "coverer_name": "Alex Johnson",
@@ -187,7 +217,21 @@ Request body:
 
 Response (200): Updated shift object (same shape as POST response, with `status: "covered"` and `coverer_name` included).
 
-### 5.3 Settings (future, admin-only)
+### 5.4 Admin
+
+- **GET /api/shifts (admin):** When `user.role === 'admin'`, return all shifts (open, covered, cancelled) when e.g. `status=all` or `admin=true` is passed. Admin calendar/list shows every shift without position filter.
+- **POST /api/shifts (admin):** Admin can create a shift (same shape as member post; poster details can be specified in body or posted “as” the admin). Keep simple: same request shape as member post when posting on behalf of someone.
+- **DELETE or PATCH /api/shifts/:id:** Admin can remove or cancel a shift. One approach: PATCH with `status: 'cancelled'`; or DELETE to remove the row. Document one approach in implementation.
+- **Signup notification:** When POST /api/auth/signup succeeds, send one email to admin (e.g. scheduler_email or a dedicated admin_notification_email in settings) with the new user’s first name, last name, email, position so the admin can validate they are an employee.
+
+### 5.5 Calendar sync (user feed)
+
+**GET /api/me/calendar** (or **GET /api/users/me/covered-shifts.ics**)
+
+- Authenticated only. Returns an .ics feed (same Content-Type and format as GET /api/shifts/:id/calendar) containing all shifts the current user has covered (e.g. where coverer_email = user.email, or coverer linked to user). User can subscribe to this URL in Google Calendar, Outlook, or Apple Calendar so their picked-up shifts appear automatically without downloading a file per shift.
+- Calendar sync in the minimal version is this feed URL only; no server push or OAuth to external calendar providers.
+
+### 5.6 Settings (future, admin-only)
 
 | Method | Path          | Auth Required | Description                       |
 |--------|---------------|---------------|-----------------------------------|
@@ -341,10 +385,12 @@ For validation errors, a `fields` array is included:
 
 | Code                  | HTTP Status | When Used                                              |
 |-----------------------|-------------|--------------------------------------------------------|
+| UNAUTHORIZED          | 401         | Protected endpoint called without a valid session     |
+| FORBIDDEN              | 403         | Member tries to access an admin-only action            |
 | VALIDATION_ERROR      | 422         | Request body fails schema validation                   |
 | SHIFT_NOT_FOUND       | 404         | No shift with the given ID                             |
 | SHIFT_ALREADY_COVERED | 409         | Attempt to cover a shift that is already covered       |
-| SHIFT_NOT_COVERED     | 400         | Attempt to download .ics for an open (uncovered) shift |
+| SHIFT_NOT_COVERED     | 400         | Attempt to download .ics for an open (uncovered) shift  |
 | INTERNAL_ERROR        | 500         | Unexpected server error                                |
 
 ---
@@ -384,14 +430,19 @@ flowchart TD
 src/
   app/
     api/
+      auth/
+        [...nextauth]/        # or signup, login, logout route handlers
       shifts/
         route.ts              # GET (list), POST (create)
         [id]/
-          route.ts            # GET (detail)
+          route.ts            # GET (detail), PATCH/DELETE (admin cancel)
           cover/
             route.ts          # PATCH (cover)
           calendar/
             route.ts          # GET (.ics download)
+      me/
+        calendar/
+          route.ts            # GET (authenticated .ics feed of covered shifts)
       locations/
         route.ts              # GET
       roles/
@@ -413,17 +464,13 @@ prisma/
 
 ## 12. Future-Proofing
 
-### Authentication
+### Authentication (in scope)
 
-- Add a `users` table and an auth provider (e.g., NextAuth.js with email magic links, or Clerk for a hosted solution).
-- Protect POST/PATCH endpoints with session middleware.
-- Add `posted_by_user_id` FK to shifts once users exist.
-- The settings endpoint becomes admin-only via role check on `req.user.role`.
+- Users table and auth (signup, login, session) are implemented. Session identifies user and role; POST /api/shifts and PATCH cover accept session and pre-fill poster/coverer when authenticated. GET /api/shifts filters by user position for members. Calendar sync feed (GET /api/me/calendar) is authenticated.
 
-### Role and Location Restrictions
+### Role and Location Restrictions (future)
 
-- The PATCH cover endpoint adds a pre-check: fetch the authenticated user's `allowed_locations` and `allowed_roles`, and reject with 403 if the shift's values are not in those lists.
-- The GET shifts endpoint can filter results to only show shifts the current user is eligible to cover.
+- Optional: add `allowed_locations` and `allowed_roles` to users; PATCH cover then checks the shift's location/role against those lists and returns 403 if not allowed. Current design uses position-only filtering for the calendar.
 
 ### SMS Notifications
 

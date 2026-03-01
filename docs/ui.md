@@ -16,13 +16,16 @@ This document covers the site map, page-by-page breakdown, component inventory, 
 /calendar                 Browse Available Shifts (calendar view)
 /calendar/:shiftId        Shift Detail (modal overlay, or standalone on mobile)
 /upcoming-features        Info page describing roadmap
+/login                    Log in (email + password or magic link)
+/signup                   Sign up (first name, last name, email, position, phone)
+/account                  User account (profile, calendar sync); when logged in
+/admin                    Admin area (all shifts, add/remove); when user.role === 'admin'
 /settings (future)        Admin/scheduler settings
-/account  (future)        User account management
 ```
 
 ### Navigation
 
-A persistent top nav bar with three items for MVP:
+A persistent top nav bar:
 
 | Label             | Route               | Notes                              |
 |-------------------|---------------------|------------------------------------|
@@ -30,7 +33,11 @@ A persistent top nav bar with three items for MVP:
 | Post a Shift      | `/post`             | Primary CTA, visually emphasized   |
 | Browse Shifts     | `/calendar`         | Secondary nav item                 |
 
-A footer contains a link to the Upcoming Features page and, eventually, Settings/Account links.
+- **When unauthenticated:** Show "Log in" and "Sign up" in nav or footer.
+- **When authenticated:** Show user name or "Account" and "Log out."
+- **When admin:** Add "Admin" or link to admin area (e.g. `/admin`).
+
+A footer contains a link to the Upcoming Features page and, when relevant, Settings/Account links.
 
 ---
 
@@ -48,15 +55,33 @@ A footer contains a link to the Upcoming Features page and, eventually, Settings
   - "Browse Shifts" -- icon + brief description, links to `/calendar`.
 - **Upcoming Features banner** -- a subtle callout strip at the bottom linking to `/upcoming-features`. Something like: "We are building more -- see what is coming."
 
-No login is required for MVP. The page loads instantly with no auth gate.
+The landing page loads instantly. When auth is implemented, unauthenticated users can still use Post and Browse (with name/email collected at post or cover time); logged-in users get a streamlined experience.
 
 ---
 
-### 3.2 Post a Shift (`/post`)
+### 3.2 Sign up (`/signup`)
+
+**Purpose:** Let a new team member create an account.
+
+**Form fields:** First name, Last name, Email, Position (single dropdown — initial option "Pharmacist"; list from GET /api/roles), Phone (optional), Password (or "Send magic link" if using magic-link auth). Submit → POST /api/auth/signup; on success redirect to `/` or `/calendar` and establish session.
+
+**UX note:** After signup, the admin receives an email with the new user's first name, last name, email, and position so they can validate the user is an employee.
+
+---
+
+### 3.3 Login (`/login`)
+
+**Purpose:** Let an existing user sign in.
+
+Email + password (or magic link). POST /api/auth/login; on success redirect to `/` or previous page. Include a link to sign up for users who do not have an account.
+
+---
+
+### 3.4 Post a Shift (`/post`)
 
 **Purpose:** Let a team member publish a shift for others to pick up.
 
-**Form Fields (top to bottom):**
+**When unauthenticated** — form fields (top to bottom):
 
 | Field              | Type              | Required | Details                                                                                       |
 |--------------------|-------------------|----------|-----------------------------------------------------------------------------------------------|
@@ -68,6 +93,8 @@ No login is required for MVP. The page loads instantly with no auth gate.
 | Title / Role       | Dropdown/select   | Yes      | Options for MVP: "Pharmacist". Extensible later.                                              |
 | Email              | Email input       | Yes      | Used for notifications when shift is covered.                                                 |
 | Mobile Phone       | Tel input         | No       | Placeholder text: "For future text notifications". Disabled-feel or clearly marked optional.  |
+
+**When authenticated:** Do not show Your Name, Email, or Title/Role (or show them read-only). Form only: Shift Date, Start Time, End Time, Location. Position and poster identity come from the session; submit sends minimal body and the server fills poster from session.
 
 **Interactions:**
 
@@ -83,7 +110,7 @@ No login is required for MVP. The page loads instantly with no auth gate.
 
 ---
 
-### 3.3 Browse Shifts -- Calendar View (`/calendar`)
+### 3.5 Browse Shifts -- Calendar View (`/calendar`)
 
 **Purpose:** Let a team member scan available shifts by date and claim one.
 
@@ -92,8 +119,8 @@ No login is required for MVP. The page loads instantly with no auth gate.
 - **Month calendar grid** -- standard 7-column grid. Days with available shifts show a badge/dot indicator with the count of open shifts.
 - **Navigation** -- left/right arrows to move between months. A "Today" button to jump back.
 - **Filter bar** (above or beside the calendar):
-  - Location filter -- multi-select checkboxes or pill toggles for the 10 pharmacy locations. Default: all selected.
-  - Role filter -- dropdown (just "Pharmacist" for now, but the control is there for extensibility).
+  - Location filter — multi-select checkboxes or pill toggles for the 10 pharmacy locations. Default: all selected.
+  - Role filter — dropdown. **When authenticated as member:** hide or default to the user's position; calendar shows only shifts for the user's position (e.g. Pharmacist sees only Pharmacist shifts; when Technician, Cashier exist, they see only their role). **When unauthenticated or admin:** role filter as today (all roles or user selection).
 - **Day click behavior** -- tapping a day with available shifts expands a panel below the calendar (on mobile) or to the right (on desktop) showing a list of shifts for that day.
 
 **Shift list (for a selected day):**
@@ -111,10 +138,11 @@ Tapping a shift card opens the Shift Detail view.
 
 - If no shifts exist for the selected month: "No shifts posted for [Month]. Check back soon!"
 - If filters eliminate all results: "No shifts match your filters. Try broadening your search."
+- **When logged in as member:** If no shifts match the user's position: e.g. "No [Pharmacist] shifts this month."
 
 ---
 
-### 3.4 Shift Detail (`/calendar/:shiftId`)
+### 3.6 Shift Detail (`/calendar/:shiftId`)
 
 **Purpose:** Show full shift info and let the user commit to covering it.
 
@@ -131,17 +159,18 @@ Tapping a shift card opens the Shift Detail view.
 **Cover Shift flow:**
 
 1. User taps "Cover This Shift".
-2. A confirmation dialog appears: "Are you sure you want to cover this shift? The poster and scheduler will be notified."
-   - The dialog collects the coverer name and email (required) so the system knows who is covering and can send them the calendar invite.
+2. **When unauthenticated:** A confirmation dialog appears: "Are you sure you want to cover this shift? The poster and scheduler will be notified." The dialog collects coverer name and email (required).
+   **When authenticated:** Confirmation dialog with no name/email fields: "You're covering this shift as [Name]. The poster and scheduler will be notified." Single "Confirm" button; server gets coverer from session.
 3. User confirms.
 4. Loading spinner on the button while the request is in flight.
 5. **Success state:** The modal updates to a confirmation view:
    - "You are covering this shift!"
    - Shift summary (date, time, location).
-   - **"Add to Calendar" buttons** -- three options:
+   - **"Add to Calendar" buttons** — three options:
      - "Add to Google Calendar" (opens a Google Calendar event creation URL).
      - "Add to Outlook" (downloads a .ics file).
      - "Add to Apple Calendar / iCal" (downloads the same .ics file; iOS recognizes it natively).
+   - **Calendar sync:** Optionally a "Sync your calendar" callout with instructions or a "Copy feed URL" button for the authenticated covered-shifts feed (see Account / Calendar sync).
    - "Back to Calendar" link.
 6. **Error state:** "Something went wrong. Please try again." Button re-enables.
 
@@ -152,7 +181,33 @@ Tapping a shift card opens the Shift Detail view.
 
 ---
 
-### 3.5 Upcoming Features (`/upcoming-features`)
+### 3.7 Account (`/account`)
+
+**Purpose:** Let the logged-in user view their profile and manage calendar sync.
+
+When implemented: show user profile (first name, last name, email, position, phone). Optional "Edit" later. Include a **Calendar sync** block: explain that the user can add a subscription URL (e.g. "Add calendar by URL" in Google Calendar or Outlook) pointing to their covered-shifts feed so future covered shifts appear automatically. Provide a "Copy feed URL" button (authenticated URL or token-based URL). No manual .ics download required once subscribed.
+
+---
+
+### 3.8 Calendar sync (user-facing)
+
+In Account or after cover success: **"Sync your calendar"** — explain that the user can add the feed URL to their calendar app (Google, Outlook, Apple) so all shifts they have picked up appear automatically. Optionally show "Copy feed URL" for GET /api/me/calendar (or the token-based equivalent). Once subscribed, new covered shifts show up without downloading a file per shift.
+
+---
+
+### 3.9 Admin (`/admin` or under `/settings`)
+
+**Purpose:** Let admins see all shifts and add or remove shifts. Visible only when `user.role === 'admin'`.
+
+- **All shifts** — List or calendar view of all shifts (open, covered, cancelled). Same calendar UI or table; no position filter. Admin sees every shift.
+- **Add shift** — Form equivalent to Post a Shift (date, time, location, role, and poster details if posting on behalf of someone; or "post as system" for admin-created shifts).
+- **Remove shift** — From list or shift detail, "Remove" or "Cancel" button; calls DELETE or PATCH to cancel. Show confirmation before remove.
+
+Admin receives an email when a new user signs up (see Sign up); no separate UI required for that notification.
+
+---
+
+### 3.10 Upcoming Features (`/upcoming-features`)
 
 **Purpose:** Inform users about the roadmap and set expectations.
 
@@ -214,6 +269,26 @@ Shift Detail (after covering)
        -> Browser opens Google Calendar with pre-filled event
   -> OR tap "Add to Outlook / iCal"
        -> .ics file downloads -> OS handles it
+```
+
+### 4.4 Signed-in member flow
+
+```
+Sign up (or Log in)
+  -> Post a Shift (no name/email/position — form is date, time, location only)
+  -> Browse Shifts (calendar shows only shifts for my position)
+  -> Tap shift -> Cover (no name/email — "You're covering as [Name]" -> Confirm)
+  -> Calendar sync: copy feed URL and add to calendar app so covered shifts appear automatically
+```
+
+### 4.5 Admin flow
+
+```
+Log in as admin
+  -> Admin area: see all shifts (open, covered, cancelled)
+  -> Add shift (form with date, time, location, role, poster if needed)
+  -> Remove/Cancel shift (from list or detail, with confirmation)
+Admin receives email when a new user signs up (to validate employee).
 ```
 
 ---
@@ -290,15 +365,13 @@ No formal design system is prescribed for MVP, but the following principles appl
 
 ## 9. Future-Proofing
 
-The MVP UI is intentionally simple, but the following hooks should be built in from day one:
+### Authentication (in scope)
 
-### Authentication
+- NavBar shows "Log in" / "Sign up" when unauthenticated and "Account" / "Log out" when authenticated. Admin users see a link to the admin area.
+- `/account` is the user profile page with calendar sync when implemented; `/login` and `/signup` are real pages.
+- When the user is logged in, the Post a Shift form omits name/email/position (filled from session); the Cover dialog omits name/email.
 
-- The NavBar component should have a slot for a user avatar/menu that is hidden for MVP but structurally present.
-- Routes like `/settings` and `/account` should return a placeholder page ("Coming soon") rather than a 404.
-- The shift posting form currently collects name/email inline. When auth exists, these fields auto-populate from the user profile and become read-only.
-
-### Role and Location Restrictions
+### Role and Location Restrictions (future)
 
 - The FilterBar and SelectDropdown components already handle the location and role lists dynamically. When restrictions are added, the server simply returns a filtered list based on the user permissions -- no UI structural change needed.
 - The "Cover This Shift" button can be conditionally disabled with a tooltip: "You are not approved to cover shifts at this location."
