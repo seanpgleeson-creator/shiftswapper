@@ -1,0 +1,39 @@
+import { z } from "zod";
+import { LOCATIONS, ROLES } from "./constants";
+
+const HHMM = /^([01]?\d|2[0-3]):[0-5]\d$/;
+
+function timeToMinutes(t: string): number {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
+}
+
+export const createShiftSchema = z
+  .object({
+    poster_name: z.string().min(1, "Name is required"),
+    poster_email: z.string().email("Invalid email"),
+    poster_phone: z
+    .string()
+    .optional()
+    .refine((v) => !v || /^[\d\s\-+()]{10,}$/.test(v), "Invalid phone format"),
+    location: z.enum(LOCATIONS as unknown as [string, ...string[]]),
+    role: z.enum(ROLES as unknown as [string, ...string[]]),
+    shift_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date"),
+    start_time: z.string().regex(HHMM, "Use HH:MM format"),
+    end_time: z.string().regex(HHMM, "Use HH:MM format"),
+  })
+  .refine(
+    (data) => {
+      const d = new Date(data.shift_date + "T12:00:00.000Z");
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return d >= today;
+    },
+    { message: "Shift date must be today or in the future", path: ["shift_date"] }
+  )
+  .refine(
+    (data) => timeToMinutes(data.start_time) < timeToMinutes(data.end_time),
+    { message: "End time must be after start time", path: ["end_time"] }
+  );
+
+export type CreateShiftInput = z.infer<typeof createShiftSchema>;

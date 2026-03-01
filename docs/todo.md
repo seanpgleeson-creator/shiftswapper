@@ -23,10 +23,10 @@ Goal: A deployable Next.js app with a database and a working "test in production
 
 ### Repo and hosting
 
-- [ ] Create GitHub repo and push initial code
-- [ ] Connect repo to Vercel; ensure `main` deploys to production
-- [ ] Add production Postgres (Vercel Postgres, Neon, or Supabase); set `DATABASE_URL` in Vercel
-- [ ] Run migrations and seed in production (manual or via deploy script)
+- [x] Create GitHub repo and push initial code
+- [x] Connect repo to Vercel; ensure `main` deploys to production
+- [x] Add production Postgres (Vercel Postgres, Neon, or Supabase); set `DATABASE_URL` in Vercel
+- [x] Run migrations and seed in production (manual or via deploy script)
 
 **PARALLEL:** Repo + Vercel setup can happen alongside local Next.js + Prisma; then connect Vercel to the repo and wire the DB.
 
@@ -55,18 +55,18 @@ Goal: Live site with navigation and placeholders so every route exists.
 
 ### Backend
 
-- [ ] `GET /api/locations` — return the 10 pharmacy location names (constants)
-- [ ] `GET /api/roles` — return role names (MVP: `["Pharmacist"]`)
-- [ ] `POST /api/shifts` — Zod validation; Prisma create; response **omits** `poster_email`, `poster_phone`
-- [ ] Consistent error envelope: `{ "error", "code" }` and `fields` for validation errors
+- [x] `GET /api/locations` — return the 10 pharmacy location names (constants)
+- [x] `GET /api/roles` — return role names (MVP: `["Pharmacist"]`)
+- [x] `POST /api/shifts` — Zod validation; Prisma create; response **omits** `poster_email`, `poster_phone`
+- [x] Consistent error envelope: `{ "error", "code" }` and `fields` for validation errors
 
 ### Frontend
 
-- [ ] `/post` page: form fields — Your Name, Shift Date (default tomorrow), Start Time, End Time, Location (dropdown), Title/Role (dropdown), Email, Mobile Phone (optional, labeled for future SMS)
-- [ ] Client validation on blur; end time &gt; start time; submit button disabled until valid
-- [ ] Submit → `POST /api/shifts`; on success show confirmation card ("Your shift on [date] at [location] has been posted") with "Post Another" and "Browse Shifts"
-- [ ] On server error: toast "Something went wrong"; keep form data
-- [ ] Optional: localStorage for last location/role
+- [x] `/post` page: form fields — Your Name, Shift Date (default tomorrow), Start Time, End Time, Location (dropdown), Title/Role (dropdown), Email, Mobile Phone (optional, labeled for future SMS)
+- [x] Client validation on blur; end time &gt; start time; submit button disabled until valid
+- [x] Submit → `POST /api/shifts`; on success show confirmation card ("Your shift on [date] at [location] has been posted") with "Post Another" and "Browse Shifts"
+- [x] On server error: toast "Something went wrong"; keep form data
+- [x] Optional: localStorage for last location/role
 
 **PARALLEL:** Backend (locations, roles, POST shifts) and frontend (form, validation, submit) can proceed in parallel once request/response shape is agreed from backend.md.
 
