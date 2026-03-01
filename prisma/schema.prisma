@@ -1,0 +1,40 @@
+// ShiftSwapper schema per docs/backend.md
+// Use PostgreSQL in production; for local dev set DATABASE_URL to a local Postgres or use SQLite by changing provider.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Shift {
+  id           String    @id @default(uuid())
+  posterName   String    @map("poster_name")
+  posterEmail  String    @map("poster_email")
+  posterPhone  String?   @map("poster_phone")
+  location     String
+  role         String
+  shiftDate    DateTime  @db.Date @map("shift_date")
+  startTime    String    @map("start_time") // HH:MM
+  endTime      String    @map("end_time")   // HH:MM
+  status       String    @default("open")   // open | covered | cancelled
+  covererName  String?   @map("coverer_name")
+  covererEmail String?   @map("coverer_email")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  coveredAt    DateTime? @map("covered_at")
+
+  @@map("shifts")
+}
+
+model Settings {
+  id              String   @id @default(uuid())
+  schedulerEmail   String   @map("scheduler_email")
+  timezone         String   @default("America/Chicago")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("settings")
+}
