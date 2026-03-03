@@ -13,7 +13,7 @@ export function NavBar() {
           <img
             src="/shift-swapper-logo.svg"
             alt="Shift Swapper"
-            className="h-8 w-auto"
+            className="h-12 w-auto"
           />
         </Link>
         <ul className="flex items-center gap-4 sm:gap-6">
