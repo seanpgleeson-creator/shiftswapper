@@ -31,7 +31,7 @@ The central table. One row per posted shift.
 | id            | UUID        | PK, DEFAULT gen_random_uuid() |                                          |
 | poster_name   | VARCHAR     | NOT NULL                 |                                               |
 | poster_email  | VARCHAR     | NOT NULL                 | Never exposed to the browser                  |
-| poster_phone  | VARCHAR     | NULL                     | Optional; reserved for future SMS             |
+| poster_phone  | VARCHAR     | NOT NULL when posting   | Required for SMS; when posted by user, from user.phone |
 | location      | VARCHAR     | NOT NULL                 | Validated against the allowed locations list  |
 | role          | VARCHAR     | NOT NULL                 | "Pharmacist" for MVP; validated against enum  |
 | shift_date    | DATE        | NOT NULL                 |                                               |
@@ -68,7 +68,7 @@ Stores signed-up team members and admins. Used for authentication and to pre-fil
 | first_name | VARCHAR     | NOT NULL                 |                                                  |
 | last_name  | VARCHAR     | NOT NULL                 |                                                  |
 | email      | VARCHAR     | UNIQUE, NOT NULL         | Login identifier                                 |
-| phone      | VARCHAR     | NULL                     | Optional                                         |
+| phone      | VARCHAR     | NOT NULL                 | Required for signup (SMS notifications)          |
 | position   | VARCHAR     | NOT NULL                 | e.g. "Pharmacist"; validated against roles list  |
 | role       | VARCHAR     | NOT NULL, DEFAULT 'member' | 'member' or 'admin'                          |
 | created_at | TIMESTAMPTZ | NOT NULL, DEFAULT now()  |                                                  |
@@ -129,7 +129,7 @@ Use session-based auth (e.g. NextAuth.js with credentials or magic link, or Cler
 
 | Method | Path                 | Auth Required | Description                                                                 |
 |--------|----------------------|---------------|-----------------------------------------------------------------------------|
-| POST   | /api/auth/signup     | No            | Body: first_name, last_name, email, password (or magic link), position, phone (optional). Create user with role 'member'. On success: send notification email to admin. Return session or redirect. |
+| POST   | /api/auth/signup     | No            | Body: first_name, last_name, email, password (or magic link), position, **phone (required, for SMS)**. Create user with role 'member'. On success: send notification email to admin. Return session or redirect. |
 | POST   | /api/auth/login      | No            | Credentials or magic link; establish session.                               |
 | POST   | /api/auth/logout     | No            | Clear session.                                                              |
 | GET    | /api/auth/session or /api/me | Session  | Return current user (id, first_name, last_name, email, position, phone, role). 401 if unauthenticated. |
@@ -138,31 +138,19 @@ Use session-based auth (e.g. NextAuth.js with credentials or magic link, or Cler
 
 | Method | Path                      | Auth Required | Description                                          |
 |--------|---------------------------|---------------|------------------------------------------------------|
-| POST   | /api/shifts               | No            | Create a new open shift posting (see body rules below) |
+| POST   | /api/shifts               | **Yes**       | Create a new open shift posting; 401 if unauthenticated (see body rules below) |
 | GET    | /api/shifts               | No            | List shifts; behavior depends on auth (see below)     |
 | GET    | /api/shifts/:id           | No            | Get full details for a single shift                  |
 | PATCH  | /api/shifts/:id/cover     | No            | Mark shift as covered; triggers notifications        |
+| PATCH  | /api/shifts/:id           | Yes (owner or admin) | Cancel or update shift; 403 if not poster and not admin |
+| DELETE | /api/shifts/:id           | Yes (owner or admin) | Remove shift; 403 if not poster and not admin   |
 | GET    | /api/shifts/:id/calendar  | No            | Download .ics file for a covered shift               |
 
 #### POST /api/shifts
 
-**When authenticated:** poster_name, poster_email, poster_phone, and role (position) come from the session. Request body only needs: shift_date, start_time, end_time, location. Set `posted_by_user_id` to current user. Optionally allow role override in body; otherwise use user.position.
+**Authentication required.** If the request is unauthenticated, return **401 Unauthorized**. Anonymous posting is removed or deprecated.
 
-**When unauthenticated:** full body required:
-
-Request body (unauthenticated):
-```json
-{
-  "poster_name": "Jane Smith",
-  "poster_email": "jane@example.com",
-  "poster_phone": "612-555-0100",
-  "location": "Shapiro Pharmacy",
-  "role": "Pharmacist",
-  "shift_date": "2026-03-15",
-  "start_time": "07:00",
-  "end_time": "15:00"
-}
-```
+**When authenticated:** poster_name, poster_email, and role (position) come from the session. Request body: shift_date, start_time, end_time, location. **poster_phone** is required for posting (for SMS): use `user.phone` from profile, or accept it in the body if not yet on profile. Set `posted_by_user_id` to current user. Optionally allow role override in body; otherwise use user.position.
 
 Response (201):
 ```json
@@ -217,6 +205,15 @@ Request body (unauthenticated):
 
 Response (200): Updated shift object (same shape as POST response, with `status: "covered"` and `coverer_name` included).
 
+#### PATCH /api/shifts/:id or DELETE /api/shifts/:id
+
+**Cancel or remove a shift.** Allowed only when the current user is the **poster** (`posted_by_user_id` = current user's id) or the user has **admin** role. Return **403 Forbidden** if the user is neither the poster nor an admin.
+
+- **PATCH:** e.g. body `{ "status": "cancelled" }` to mark the shift cancelled without deleting the row.
+- **DELETE:** remove the shift row (or soft-delete per implementation).
+
+Use the same ownership check for both: allow if `posted_by_user_id === session.user.id` or `session.user.role === 'admin'`.
+
 ### 5.4 Admin
 
 - **GET /api/shifts (admin):** When `user.role === 'admin'`, return all shifts (open, covered, cancelled) when e.g. `status=all` or `admin=true` is passed. Admin calendar/list shows every shift without position filter.
@@ -248,7 +245,7 @@ Enforced server-side via Zod schema before any database write:
 
 - `poster_name`: non-empty string
 - `poster_email`: valid email format, required
-- `poster_phone`: optional; if present, must match phone number pattern
+- `poster_phone`: required when posting (for SMS); from user profile when posted by user; must match phone number pattern
 - `location`: must be one of the 10 allowed strings
 - `role`: must be one of the allowed role strings
 - `shift_date`: valid ISO date, must be today or in the future
@@ -273,7 +270,7 @@ Executed in a single database transaction where possible:
 
 ### Trigger
 
-Both emails are sent immediately after a successful cover action in step 6 of the cover flow.
+Both emails (and SMS when implemented) are sent immediately after a successful cover action in step 6 of the cover flow.
 
 ### Email 1: To the original poster
 
@@ -314,6 +311,12 @@ Both emails are sent immediately after a successful cover action in step 6 of th
 
   -- ShiftSwapper
   ```
+
+### SMS on cover
+
+- **To:** poster (e.g. `poster_phone` from the shift record).
+- **Content:** Include the **coverer name** and a **prompt to send the shift officially in UKG** (e.g. "Send this shift officially in UKG to complete the swap."). Shift Swapper is separate from UKG; manual transfer is required.
+- **Implementation:** Use Twilio (or similar) API. Document env vars: e.g. `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` (or equivalent). SMS is additive; email behavior is unchanged. If SMS send fails, log and do not roll back the cover.
 
 ### Implementation Notes
 

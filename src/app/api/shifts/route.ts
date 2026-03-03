@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { createShiftSchema, createShiftAuthenticatedSchema } from "@/lib/validation";
+import { createShiftAuthenticatedSchema } from "@/lib/validation";
 
 function shiftToJson(shift: {
   id: string;
@@ -14,6 +14,7 @@ function shiftToJson(shift: {
   endTime: string;
   posterName: string;
   createdAt: Date;
+  postedByUserId: string | null;
 }) {
   return {
     id: shift.id,
@@ -25,6 +26,7 @@ function shiftToJson(shift: {
     end_time: shift.endTime,
     poster_name: shift.posterName,
     created_at: shift.createdAt.toISOString(),
+    posted_by_user_id: shift.postedByUserId ?? undefined,
   };
 }
 
@@ -63,6 +65,7 @@ export async function GET(request: NextRequest) {
       endTime: true,
       posterName: true,
       createdAt: true,
+      postedByUserId: true,
     },
     orderBy: [{ shiftDate: "asc" }, { startTime: "asc" }],
   });
@@ -72,6 +75,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    return NextResponse.json(
+      { error: "Sign in to post a shift", code: "UNAUTHORIZED" },
+      { status: 401 }
+    );
+  }
   let body: unknown;
   try {
     body = await request.json();
@@ -82,7 +91,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (session?.user) {
+  {
     const parsed = createShiftAuthenticatedSchema.safeParse(body);
     if (!parsed.success) {
       const fields = parsed.error.flatten().fieldErrors;
@@ -102,12 +111,23 @@ export async function POST(request: NextRequest) {
     const data = parsed.data;
     const shiftDate = new Date(data.shift_date + "T12:00:00.000Z");
     const u = session.user as { id?: string; email?: string; name?: string; firstName?: string; lastName?: string; position?: string; phone?: string };
+    const posterPhone = (data.poster_phone?.trim() || u.phone?.trim() || "").trim() || null;
+    if (!posterPhone) {
+      return NextResponse.json(
+        {
+          error: "Phone is required for posting (for SMS notifications). Add it in your account or enter it when posting.",
+          code: "VALIDATION_ERROR",
+          fields: [{ field: "poster_phone", message: "Phone is required for SMS notifications" }],
+        },
+        { status: 422 }
+      );
+    }
     const posterName = [u.firstName, u.lastName].filter(Boolean).join(" ").trim() || u.name || "User";
     const shift = await prisma.shift.create({
       data: {
         posterName,
         posterEmail: u.email ?? "",
-        posterPhone: u.phone ?? null,
+        posterPhone,
         location: data.location,
         role: u.position ?? "",
         shiftDate,
@@ -132,53 +152,4 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   }
-
-  const parsed = createShiftSchema.safeParse(body);
-  if (!parsed.success) {
-    const fields = parsed.error.flatten().fieldErrors;
-    const fieldList = Object.entries(fields).map(([field, messages]) => ({
-      field,
-      message: Array.isArray(messages) ? messages[0] : messages,
-    }));
-    return NextResponse.json(
-      {
-        error: "Validation failed",
-        code: "VALIDATION_ERROR",
-        fields: fieldList,
-      },
-      { status: 422 }
-    );
-  }
-
-  const data = parsed.data;
-  const shiftDate = new Date(data.shift_date + "T12:00:00.000Z");
-
-  const shift = await prisma.shift.create({
-    data: {
-      posterName: data.poster_name,
-      posterEmail: data.poster_email,
-      posterPhone: data.poster_phone || null,
-      location: data.location,
-      role: data.role,
-      shiftDate,
-      startTime: data.start_time,
-      endTime: data.end_time,
-      status: "open",
-    },
-  });
-
-  return NextResponse.json(
-    {
-      id: shift.id,
-      status: shift.status,
-      location: shift.location,
-      role: shift.role,
-      shift_date: shift.shiftDate.toISOString().slice(0, 10),
-      start_time: shift.startTime,
-      end_time: shift.endTime,
-      poster_name: shift.posterName,
-      created_at: shift.createdAt.toISOString(),
-    },
-    { status: 201 }
-  );
 }

@@ -171,6 +171,40 @@ Goal: Live site with navigation and placeholders so every route exists.
 
 ---
 
+## Feature 6b: Login enforcement and poster-only remove
+
+### Backend
+
+- [x] POST /api/shifts **requires authentication**; return 401 if unauthenticated (no anonymous post).
+- [x] Add **PATCH /api/shifts/:id** (e.g. status: cancelled) or **DELETE /api/shifts/:id**. Allowed only when `posted_by_user_id` = current user or user is admin; 403 otherwise.
+- [x] Phone required in signup and in post flow (from profile or body).
+
+### Frontend
+
+- [x] /post when unauthenticated → redirect to login or show "Sign in to post a shift."
+- [x] For shifts the current user posted, show "Remove my shift" (or "Cancel") with confirmation; call new PATCH or DELETE endpoint.
+- [x] Phone required in signup form and in post flow if not on profile.
+
+**Verify in production:** Unauthenticated /post → redirect or sign-in prompt. Log in → post shift → see "Remove my shift" on that shift → confirm → shift cancelled/removed.
+
+---
+
+## Feature 6c: SMS / text notifications
+
+### Backend
+
+- [ ] Require **poster_phone** (user profile or shift payload) when posting.
+- [ ] On cover: send **SMS** (e.g. to poster) with coverer name and prompt to send the shift officially in UKG. Twilio (or similar); env vars (e.g. TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER).
+- [ ] Email behavior unchanged.
+
+### Frontend
+
+- [ ] Phone required in signup and in post flow (or from profile). No new UI for SMS beyond ensuring phone is collected.
+
+**Verify in production:** Post shift with phone → another user covers → poster receives SMS with coverer name and UKG prompt.
+
+---
+
 ## Feature 7: Admin
 
 ### Backend
@@ -217,6 +251,8 @@ Goal: Live site with navigation and placeholders so every route exists.
 | **Feature 3: Cover a Shift** | Cover API (GET :id, PATCH, email) \| Detail modal, confirm dialog, success view |
 | **Feature 4: Calendar Invites** | GET :id/calendar (.ics) \| Add to Calendar buttons (Google URL + .ics link) |
 | **Feature 6: User accounts**      | Auth (signup, login, session) \| Post/cover/calendar behavior when authenticated |
+| **Feature 6b: Login + poster remove** | POST auth + PATCH/DELETE ownership \| /post redirect, "Remove my shift" UI |
+| **Feature 6c: SMS**              | poster_phone + Twilio on cover \| Phone in signup/post |
 | **Feature 7: Admin**             | Admin shifts API \| Admin UI (all shifts, add, remove) |
 | **Feature 8: Calendar sync**      | GET /api/me/calendar \| Copy feed URL + instructions |
 

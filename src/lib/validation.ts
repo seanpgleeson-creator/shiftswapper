@@ -58,8 +58,8 @@ export const signupSchema = z
     position: z.enum(ROLES as unknown as [string, ...string[]]),
     phone: z
       .string()
-      .optional()
-      .refine((v) => !v || /^[\d\s\-+()]{10,}$/.test(v), "Invalid phone format"),
+      .min(1, "Phone is required for SMS notifications")
+      .refine((v) => /^[\d\s\-+()]{10,}$/.test(v), "Invalid phone format"),
     password: z.string().min(8, "Password must be at least 8 characters"),
   });
 
@@ -71,6 +71,10 @@ const createShiftAuthenticatedBase = z
     start_time: z.string().regex(HHMM, "Use HH:MM format"),
     end_time: z.string().regex(HHMM, "Use HH:MM format"),
     location: z.enum(LOCATIONS as unknown as [string, ...string[]]),
+    poster_phone: z
+      .string()
+      .optional()
+      .refine((v) => !v || /^[\d\s\-+()]{10,}$/.test(v), "Invalid phone format"),
   })
   .refine(
     (data) => {

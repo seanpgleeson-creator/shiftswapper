@@ -14,6 +14,21 @@ Use this when picking up the project. See [docs/todo.md](todo.md) for the full c
 
 ---
 
+## System context
+
+Shift Swapper operates **separately** from the company's UKG scheduling system. A manual transfer is required from Shift Swapper into UKG. SMS/text notifications are intended to bridge the gap (e.g. prompt poster to send the shift officially in UKG). The app is still a **non-production** tool.
+
+---
+
+## Planned next (from product)
+
+- **Posting restricted to logged-in users only** — Remove or redirect the anonymous post flow; only authenticated users can post a shift.
+- **Only poster (or admin) can edit/remove a shift** — New "Remove my shift" for posters; backend PATCH/DELETE with ownership check (posted_by_user_id = current user or user is admin).
+- **Phone required** — For posting and signup, so SMS can be sent (e.g. to poster on cover).
+- **SMS workflow** — On cover, send text notification including name of person taking the shift and a prompt to send the shift officially in UKG.
+
+---
+
 ## Next steps when you pick up the project
 
 1. **Fix staging (stage.hcmcshiftswap.com)**  
@@ -30,3 +45,12 @@ Use this when picking up the project. See [docs/todo.md](todo.md) for the full c
 
 4. **Next feature**  
    **Feature 7 (Admin)** is the next unchecked section in [docs/todo.md](todo.md): admin role, see all shifts, add/remove shifts, signup notification to admin (latter already done in Feature 6).
+
+5. **Login enforcement and poster-only remove**  
+   Enforce login for POST /api/shifts (401 if unauthenticated). Add PATCH /api/shifts/:id (e.g. status=cancelled) or DELETE; allow only when posted_by_user_id = current user or user is admin. Frontend: /post when unauthenticated → redirect to login or "Sign in to post"; show "Remove my shift" for shifts the current user posted, with confirmation.
+
+6. **Phone required**  
+   Make phone required in signup and in the post flow (from profile or one field). Validation and UI updates.
+
+7. **SMS notification on cover**  
+   Implement SMS (e.g. Twilio) on cover: send text to poster with coverer name and prompt to send the shift officially in UKG. Env vars (e.g. TWILIO_*). Email behavior unchanged.

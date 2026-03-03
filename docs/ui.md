@@ -63,7 +63,7 @@ The landing page loads instantly. When auth is implemented, unauthenticated user
 
 **Purpose:** Let a new team member create an account.
 
-**Form fields:** First name, Last name, Email, Position (single dropdown — initial option "Pharmacist"; list from GET /api/roles), Phone (optional), Password (or "Send magic link" if using magic-link auth). Submit → POST /api/auth/signup; on success redirect to `/` or `/calendar` and establish session.
+**Form fields:** First name, Last name, Email, Position (single dropdown — initial option "Pharmacist"; list from GET /api/roles), **Phone (required, for SMS)**.  Password (or "Send magic link" if using magic-link auth). Submit → POST /api/auth/signup; on success redirect to `/` or `/calendar` and establish session.
 
 **UX note:** After signup, the admin receives an email with the new user's first name, last name, email, and position so they can validate the user is an employee.
 
@@ -81,20 +81,19 @@ Email + password (or magic link). POST /api/auth/login; on success redirect to `
 
 **Purpose:** Let a team member publish a shift for others to pick up.
 
-**When unauthenticated** — form fields (top to bottom):
+**Posting requires login.** If the user is not logged in, redirect to login or show a clear message: "Sign in to post a shift" (with link to `/login` or `/signup`). Do not offer an anonymous post form.
+
+**When authenticated** — form fields (top to bottom):
 
 | Field              | Type              | Required | Details                                                                                       |
 |--------------------|-------------------|----------|-----------------------------------------------------------------------------------------------|
-| Your Name          | Text input        | Yes      | Free text. Becomes the contact name on the posted shift.                                      |
 | Shift Date         | Date picker       | Yes      | Native date input on mobile, calendar widget on desktop. Default: tomorrow.                   |
 | Shift Start Time   | Time picker       | Yes      | Native time input. 15-min increments suggested.                                               |
 | Shift End Time     | Time picker       | Yes      | Must be after start time. Validation inline.                                                  |
 | Location           | Dropdown/select   | Yes      | Options: Red Pharmacy, CSC Pharmacy, Shapiro Pharmacy, Whittier Pharmacy, Green Pharmacy, Speciality Pharmacy, Brooklyn Park Pharmacy, St. Anthony Pharmacy, Richfield Pharmacy, North Loop Pharmacy. |
-| Title / Role       | Dropdown/select   | Yes      | Options for MVP: "Pharmacist". Extensible later.                                              |
-| Email              | Email input       | Yes      | Used for notifications when shift is covered.                                                 |
-| Mobile Phone       | Tel input         | No       | Placeholder text: "For future text notifications". Disabled-feel or clearly marked optional.  |
+| Mobile Phone       | Tel input         | Yes      | From profile if present; otherwise one required field (for SMS notifications).                |
 
-**When authenticated:** Do not show Your Name, Email, or Title/Role (or show them read-only). Form only: Shift Date, Start Time, End Time, Location. Position and poster identity come from the session; submit sends minimal body and the server fills poster from session.
+Your name, email, and role (position) come from the session and are not shown or are read-only. Submit sends minimal body; server fills poster from session. **Phone** is required (from profile or one required field).
 
 **Interactions:**
 
@@ -106,7 +105,7 @@ Email + password (or magic link). POST /api/auth/login; on success redirect to `
 **UX notes:**
 
 - Pre-populate location and role if the user has posted before (store in localStorage for MVP, tied to user account later).
-- The phone field should not feel like a blocker. Use lighter visual weight and a helper note: "Optional -- we will add text notifications soon."
+- Phone is required for posting (for SMS); when logged in, use profile phone or require one phone field on the form.
 
 ---
 
@@ -131,6 +130,7 @@ Each shift is a compact card showing:
 - Location name
 - Role
 - Posted by (name only, no contact info exposed here)
+- **Remove my shift:** For shifts the current user posted, show "Remove my shift" or "Cancel" with confirmation; on confirm, call PATCH or DELETE to cancel/remove. Admin can remove any shift from the admin UI.
 
 Tapping a shift card opens the Shift Detail view.
 
@@ -155,6 +155,7 @@ Tapping a shift card opens the Shift Detail view.
 - **Role** -- badge style.
 - **Posted by** -- name only (email is not exposed to the browser; notifications happen server-side).
 - **"Cover This Shift" button** -- large, primary-colored CTA.
+- **Remove my shift:** When the current user is the poster, show "Remove my shift" (or "Cancel"); confirmation dialog before PATCH/DELETE. Admin can remove any shift from admin UI.
 
 **Cover Shift flow:**
 
@@ -185,7 +186,7 @@ Tapping a shift card opens the Shift Detail view.
 
 **Purpose:** Let the logged-in user view their profile and manage calendar sync.
 
-When implemented: show user profile (first name, last name, email, position, phone). Optional "Edit" later. Include a **Calendar sync** block: explain that the user can add a subscription URL (e.g. "Add calendar by URL" in Google Calendar or Outlook) pointing to their covered-shifts feed so future covered shifts appear automatically. Provide a "Copy feed URL" button (authenticated URL or token-based URL). No manual .ics download required once subscribed.
+When implemented: show user profile (first name, last name, email, position, **phone** — required for SMS, visible in account). Optional "Edit" later. Include a **Calendar sync** block: explain that the user can add a subscription URL (e.g. "Add calendar by URL" in Google Calendar or Outlook) pointing to their covered-shifts feed so future covered shifts appear automatically. Provide a "Copy feed URL" button (authenticated URL or token-based URL). No manual .ics download required once subscribed.
 
 ---
 
@@ -220,7 +221,7 @@ Admin receives an email when a new user signs up (see Sign up); no separate UI r
 | User Accounts                  | Sign in with your own account to manage your posted and covered shifts in one place.         |
 | Remove Posted Shift            | Remove or cancel a shift you posted (e.g., you no longer need coverage). Requires sign-in.   |
 | Role and Location Restrictions | Ensure only team members approved for a specific role or location can pick up those shifts.   |
-| SMS/Text Notifications         | Get text messages when your shift is covered or new shifts are posted at your location.       |
+| SMS/Text Notifications         | Get text messages when your shift is covered (coverer name, prompt to send shift officially in UKG). Shift Swapper is separate from UKG; manual transfer required.       |
 | Shift History                  | View a log of past shift swaps for your records.                                             |
 | Admin Dashboard                | Schedulers can manage locations, roles, and team member permissions.                         |
 

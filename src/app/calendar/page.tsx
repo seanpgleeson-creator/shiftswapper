@@ -12,6 +12,7 @@ type Shift = {
   start_time: string;
   end_time: string;
   poster_name: string;
+  posted_by_user_id?: string;
 };
 
 function formatTime(hhmm: string): string {
@@ -58,10 +59,18 @@ export default function CalendarPage() {
   const [covererEmail, setCovererEmail] = useState("");
   const isAuthenticated = !!session?.user;
   const sessionName = isAuthenticated ? (session?.user?.name ?? "You") : "";
+  const userId = (session?.user as { id?: string } | undefined)?.id;
+  const userRole = (session?.user as { role?: string } | undefined)?.role;
+  const canRemoveShift = (shift: Shift) =>
+    isAuthenticated &&
+    (shift.posted_by_user_id === userId || userRole === "admin");
   const [coverError, setCoverError] = useState<string | null>(null);
   const [coverLoading, setCoverLoading] = useState(false);
   const [coverSuccess, setCoverSuccess] = useState(false);
   const [coverGoogleCalendarUrl, setCoverGoogleCalendarUrl] = useState<string | null>(null);
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
+  const [removeLoading, setRemoveLoading] = useState(false);
+  const [removeError, setRemoveError] = useState<string | null>(null);
 
   const [locations, setLocations] = useState<string[]>([]);
   const [roles, setRoles] = useState<string[]>([]);
@@ -110,6 +119,8 @@ export default function CalendarPage() {
         setCoverError(null);
         setCovererName("");
         setCovererEmail("");
+        setShowRemoveConfirm(false);
+        setRemoveError(null);
       }
     };
     document.addEventListener("keydown", onKeyDown);
@@ -358,6 +369,8 @@ export default function CalendarPage() {
             setCoverError(null);
             setCovererName("");
             setCovererEmail("");
+            setShowRemoveConfirm(false);
+            setRemoveError(null);
           }}
           role="dialog"
           aria-modal="true"
@@ -367,7 +380,68 @@ export default function CalendarPage() {
             className="w-full max-w-md rounded-t-2xl sm:rounded-2xl bg-white p-6 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            {coverSuccess ? (
+            {showRemoveConfirm ? (
+              <>
+                <h2 id="shift-detail-title" className="text-xl font-semibold text-slate-800 mb-2">
+                  Remove this shift?
+                </h2>
+                <p className="text-slate-600 text-sm mb-4">
+                  This will cancel the shift so it no longer appears as available. You can&apos;t undo this.
+                </p>
+                {removeError && (
+                  <p className="mb-3 flex items-start gap-1.5 text-sm text-red-600" role="alert">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 flex-shrink-0 mt-0.5 text-red-600" aria-hidden>
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                    </svg>
+                    {removeError}
+                  </p>
+                )}
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    className="flex-1 min-h-[44px] rounded-md border border-slate-300 bg-white px-4 py-2.5 font-medium text-slate-700 hover:bg-slate-50"
+                    onClick={() => {
+                      setShowRemoveConfirm(false);
+                      setRemoveError(null);
+                    }}
+                    disabled={removeLoading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="flex-1 min-h-[44px] rounded-md bg-red-600 px-4 py-2.5 font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                    disabled={removeLoading}
+                    onClick={async () => {
+                      if (!detailShift) return;
+                      setRemoveError(null);
+                      setRemoveLoading(true);
+                      try {
+                        const res = await fetch(`/api/shifts/${detailShift.id}`, {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ status: "cancelled" }),
+                        });
+                        const data = await res.json();
+                        if (!res.ok) {
+                          setRemoveError(data.error ?? "Something went wrong. Please try again.");
+                          return;
+                        }
+                        refetchShifts();
+                        setDetailShift(null);
+                        setShowRemoveConfirm(false);
+                      } catch {
+                        setRemoveError("Something went wrong. Please try again.");
+                      } finally {
+                        setRemoveLoading(false);
+                      }
+                    }}
+                  >
+                    {removeLoading ? "Removing…" : "Remove shift"}
+                  </button>
+                </div>
+              </>
+            ) : coverSuccess ? (
               <>
                 <h2 id="shift-detail-title" className="text-xl font-semibold text-slate-800 mb-2">
                   You&apos;re covering this shift!
@@ -548,21 +622,32 @@ export default function CalendarPage() {
                     <dd>{detailShift.poster_name}</dd>
                   </div>
                 </dl>
-                <div className="mt-6 flex gap-3">
-                  <button
-                    type="button"
-                    className="flex-1 min-h-[44px] rounded-md border border-slate-300 bg-white px-4 py-2.5 font-medium text-slate-700 hover:bg-slate-50"
-                    onClick={() => setDetailShift(null)}
-                  >
-                    Close
-                  </button>
-                  <button
-                    type="button"
-                    className="flex-1 min-h-[44px] rounded-md bg-blue-600 px-4 py-2.5 font-medium text-white hover:bg-blue-700"
-                    onClick={() => setShowCoverConfirm(true)}
-                  >
-                    Cover This Shift
-                  </button>
+                <div className="mt-6 flex flex-col gap-3">
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      className="flex-1 min-h-[44px] rounded-md border border-slate-300 bg-white px-4 py-2.5 font-medium text-slate-700 hover:bg-slate-50"
+                      onClick={() => setDetailShift(null)}
+                    >
+                      Close
+                    </button>
+                    <button
+                      type="button"
+                      className="flex-1 min-h-[44px] rounded-md bg-blue-600 px-4 py-2.5 font-medium text-white hover:bg-blue-700"
+                      onClick={() => setShowCoverConfirm(true)}
+                    >
+                      Cover This Shift
+                    </button>
+                  </div>
+                  {detailShift && canRemoveShift(detailShift) && (
+                    <button
+                      type="button"
+                      className="min-h-[44px] rounded-md border border-red-300 bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-100"
+                      onClick={() => setShowRemoveConfirm(true)}
+                    >
+                      Remove my shift
+                    </button>
+                  )}
                 </div>
               </>
             )}

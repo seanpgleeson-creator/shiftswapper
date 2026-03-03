@@ -14,15 +14,17 @@ A pharmacy workplace migrated from When I Work to UKG. UKG does not support the 
 
 ShiftSwapper is a lightweight web application that lets pharmacy team members:
 
-- **Sign up and log in** with first name, last name, email, position, and phone. When logged in, post and cover shifts without re-entering those details.
-- **Post a shift** they need covered (date, time, location, role, contact info — or date/time/location only when logged in).
+- **Sign up and log in** with first name, last name, email, position, and **phone (required for SMS)**. When logged in, post and cover shifts without re-entering those details.
+- **Post a shift** they need covered — **posting is restricted to logged-in users only** (no anonymous post). When logged in, form is date, time, location (and phone from profile or required); only the **poster (or admin) can edit or remove** a posted shift. **Cover remains open to anyone** (with or without login).
 - **Browse open shifts** on a calendar and claim one with one click. The calendar shows only shifts for the user's position (Pharmacist now; Technician, Cashier when added).
-- **Get notified by email** when a shift is covered (poster) or when a coverage event occurs (scheduler).
+- **Get notified by email** when a shift is covered (poster) or when a coverage event occurs (scheduler). **SMS/text notifications** (e.g. to poster on cover) include the **coverer name** and a **prompt to send the shift officially in UKG**. Phone is required for posting and signup to enable SMS.
 - **Add a covered shift to their calendar** (Outlook, Gmail, iCal) via a downloadable .ics file or Google Calendar deep link.
 - **Optional calendar sync:** Subscribe to a feed of covered shifts so they appear in the user's calendar automatically.
 - **Admin:** Admins can see all shifts, add or remove shifts, and receive an email when someone signs up so they can validate the user is an employee.
 
-The app is mobile-first so staff can use it on phones between tasks. Unauthenticated users can still post and browse (entering name/email when required); logged-in users get a streamlined experience.
+Shift Swapper is **separate from the company's UKG scheduling system**; manual transfer from Shift Swapper to UKG is required. The app remains **non-production**.
+
+The app is mobile-first so staff can use it on phones between tasks. Cover is open to anyone (logged in or not); posting requires login.
 
 ### Intended Audience
 
@@ -48,8 +50,11 @@ The app is mobile-first so staff can use it on phones between tasks. Unauthentic
 ### In Scope
 
 - Landing page with two actions: Post a Shift, Browse Shifts.
-- **User sign-up** (first name, last name, email, position, phone) and **login**; when logged in, post without name/email/position and cover without name/email; calendar filtered by user position.
-- Post a Shift form (full fields when unauthenticated; date, time, location only when authenticated).
+- **Shift posting restricted to logged-in users only** (no anonymous post); poster (or admin) can remove/cancel own shift.
+- **Phone required** for posting and signup (for SMS).
+- **SMS notification on cover** (coverer name, UKG prompt).
+- **User sign-up** (first name, last name, email, position, **phone required**) and **login**; when logged in, post without name/email/position (date, time, location, phone from profile or required) and cover without name/email; calendar filtered by user position.
+- Post a Shift form (login required; when authenticated: date, time, location, phone from profile or required).
 - Calendar view of open shifts with month navigation, filters (location, role), and day selection; when logged in as member, only shifts for the user's position.
 - Shift detail (modal/sheet) with "Cover This Shift" and confirmation dialog (coverer name + email when unauthenticated; one-click confirm when authenticated).
 - Notification emails to poster and scheduler when a shift is covered.
@@ -62,7 +67,7 @@ The app is mobile-first so staff can use it on phones between tasks. Unauthentic
 ### Out of Scope
 
 - Fine-grained role/location restrictions (allowed_locations, allowed_roles per user); current design uses position-only filtering.
-- SMS/text notifications (phone field exists but is optional and unused for notifications).
+- Fine-grained SMS preferences (e.g. per-notification toggles) remain out of scope; SMS on cover is in scope.
 - Shift history or audit log in the UI.
 
 ---
@@ -73,12 +78,20 @@ The app is mobile-first so staff can use it on phones between tasks. Unauthentic
 
 | ID | Requirement |
 |----|-------------|
-| FR-1.1 | User can submit a form with: poster name, shift date, start time, end time, location (dropdown of 10 pharmacies), role (dropdown; MVP: "Pharmacist" only), email (required), mobile phone (optional). |
+| FR-1.0 | **Posting requires authentication.** Unauthenticated users are redirected to login or shown "Sign in to post a shift"; no anonymous post. |
+| FR-1.1 | When logged in, user can submit a form with: shift date, start time, end time, location (dropdown), role from account; **poster_phone is required** (from user profile or one required field at post time). Poster name/email come from session. |
 | FR-1.2 | Location options: Red Pharmacy, CSC Pharmacy, Shapiro Pharmacy, Whittier Pharmacy, Green Pharmacy, Speciality Pharmacy, Brooklyn Park Pharmacy, St. Anthony Pharmacy, Richfield Pharmacy, North Loop Pharmacy. |
 | FR-1.3 | Client validates: end time after start time; all required fields present. Inline validation on blur; submit button disabled until valid. |
 | FR-1.4 | Server validates: poster_name non-empty; poster_email valid format; location and role in allowed lists; shift_date today or future; end_time after start_time. |
 | FR-1.5 | On successful post, show confirmation card with date/location and links to "Post Another" and "Browse Shifts." On server error, show toast and retain form data. |
 | FR-1.6 | Poster email and phone are never returned in any API response. |
+
+### 4.1b Remove shift (poster or admin)
+
+| ID | Requirement |
+|----|-------------|
+| FR-Remove.1 | **Poster** can remove or cancel only shifts they posted (posted_by_user_id = current user). **Admin** can remove or cancel any shift. One endpoint (e.g. PATCH /api/shifts/:id with status=cancelled or DELETE) with auth and ownership check; 403 if not owner and not admin. |
+| FR-Remove.2 | UI: poster sees "Remove my shift" (or "Cancel") on shifts they posted (e.g. in calendar or "My shifts"); confirmation before PATCH/DELETE. Admin can remove any shift in admin UI. |
 
 ### 4.2 Shift Browsing
 
@@ -129,7 +142,7 @@ The app is mobile-first so staff can use it on phones between tasks. Unauthentic
 
 | ID | Requirement |
 |----|-------------|
-| FR-Auth.1 | User can sign up with first name, last name, email, position (dropdown: Pharmacist initially; list from API), phone (optional). Admin receives an email on signup. |
+| FR-Auth.1 | User can sign up with first name, last name, email, position (dropdown: Pharmacist initially; list from API), **phone (required, for SMS)**. Admin receives an email on signup. |
 | FR-Auth.2 | User can log in; session is used for subsequent requests. |
 | FR-Auth.3 | When logged in, Post a Shift form does not ask for name, email, or position (pre-filled from account). |
 | FR-Auth.4 | When logged in, Cover flow does not ask for name or email (taken from session). |
@@ -187,7 +200,7 @@ The app is mobile-first so staff can use it on phones between tasks. Unauthentic
 | Column | Type | Notes |
 |--------|------|-------|
 | id | UUID | PK |
-| poster_name, poster_email, poster_phone | string | phone optional |
+| poster_name, poster_email, poster_phone | string | poster_phone required when posting (for SMS) |
 | location, role | string | From allowed lists |
 | shift_date | date | |
 | start_time, end_time | time | end &gt; start |
@@ -211,12 +224,12 @@ The app is mobile-first so staff can use it on phones between tasks. Unauthentic
 | id | UUID | PK |
 | first_name, last_name | string | |
 | email | string | UNIQUE, login identifier |
-| phone | string | Optional |
+| phone | string | **Required** (for SMS) |
 | position | string | e.g. Pharmacist; from roles list |
 | role | string | member \| admin |
 | created_at, updated_at | timestamptz | |
 
-Shifts: add `posted_by_user_id` (nullable FK to users).
+Shifts: add `posted_by_user_id` (nullable FK to users). Poster-only mutation (PATCH/DELETE) and admin override documented in API and backend.
 
 ---
 
@@ -231,12 +244,12 @@ Shifts: add `posted_by_user_id` (nullable FK to users).
 | POST | /api/auth/logout | Log out; clear session |
 | GET | /api/auth/session or /api/me | Current user (401 if unauthenticated) |
 | GET | /api/me/calendar | Authenticated .ics feed of all shifts the user has covered (calendar sync) |
-| POST | /api/shifts | Create shift; when authenticated, poster from session; else full body |
+| POST | /api/shifts | Create shift; **auth required** (401 if not); poster from session; poster_phone required (profile or body) |
 | GET | /api/shifts | List shifts; when member: filter by user position; when admin: can request all (e.g. status=all) |
 | GET | /api/shifts/:id | Shift detail (no email in response) |
 | PATCH | /api/shifts/:id/cover | Cover shift; when authenticated coverer from session; else body: coverer_name, coverer_email |
 | GET | /api/shifts/:id/calendar | Download .ics for covered shift |
-| PATCH or DELETE | /api/shifts/:id | Admin: cancel or remove shift |
+| PATCH or DELETE | /api/shifts/:id | **Poster or admin only:** cancel or remove shift; 403 if not owner and not admin |
 | GET / PATCH | /api/settings | Future, admin-only |
 
 ---
@@ -246,9 +259,10 @@ Shifts: add `posted_by_user_id` (nullable FK to users).
 | When | Who | What |
 |------|-----|------|
 | A shift is covered (PATCH cover succeeds) | **Poster** (poster_email) | Email: "Your shift on [date] at [location] has been covered." Body: coverer name, shift details, ask to confirm with scheduler. |
+| Same event | **Poster** (poster_phone) | **SMS:** Include coverer name and prompt to send the shift officially in UKG. (Shift Swapper is separate from UKG; manual transfer required.) |
 | Same event | **Scheduler** (settings.scheduler_email) | Email: "Shift coverage alert: [date] at [location]." Body: shift details, poster name, coverer name and email. |
 
-Emails are sent server-side via Resend/SendGrid. If sending fails, the cover is still persisted; failure is logged and optionally noted in the API response.
+Emails are sent server-side via Resend/SendGrid. SMS (e.g. Twilio) is additive; email behavior unchanged. If sending fails, the cover is still persisted; failure is logged and optionally noted in the API response.
 
 ---
 
