@@ -193,13 +193,13 @@ Goal: Live site with navigation and placeholders so every route exists.
 
 ### Backend
 
-- [ ] Require **poster_phone** (user profile or shift payload) when posting.
-- [ ] On cover: send **SMS** (e.g. to poster) with coverer name and prompt to send the shift officially in UKG. Twilio (or similar); env vars (e.g. TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER).
-- [ ] Email behavior unchanged.
+- [x] Require **poster_phone** (user profile or shift payload) when posting.
+- [x] On cover: send **SMS** (e.g. to poster) with coverer name and prompt to send the shift officially in UKG. Twilio (or similar); env vars (e.g. TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER).
+- [x] Email behavior unchanged.
 
 ### Frontend
 
-- [ ] Phone required in signup and in post flow (or from profile). No new UI for SMS beyond ensuring phone is collected.
+- [x] Phone required in signup and in post flow (or from profile). No new UI for SMS beyond ensuring phone is collected.
 
 **Verify in production:** Post shift with phone → another user covers → poster receives SMS with coverer name and UKG prompt.
 

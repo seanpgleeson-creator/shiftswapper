@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { coverShiftSchema, coverShiftAuthenticatedSchema } from "@/lib/validation";
 import { sendCoverEmails } from "@/lib/email";
+import { sendCoverSms } from "@/lib/sms";
 import { buildGoogleCalendarUrl } from "@/lib/calendar";
 
 export async function PATCH(
@@ -99,6 +100,20 @@ export async function PATCH(
     console.error("Cover emails failed:", emailResult.error);
   }
 
+  let smsOk = true;
+  if (shift.posterPhone?.trim()) {
+    const smsResult = await sendCoverSms({
+      posterPhone: shift.posterPhone,
+      covererName,
+    });
+    smsOk = smsResult.ok;
+    if (!smsResult.ok) {
+      console.error("[Cover] SMS failed:", smsResult.error);
+    }
+  } else {
+    console.warn("[Cover] No posterPhone on shift", shift.id, "; SMS skipped");
+  }
+
   const timezone = settings?.timezone ?? "America/Chicago";
   const googleCalendarUrl = buildGoogleCalendarUrl(
     {
@@ -127,6 +142,9 @@ export async function PATCH(
   };
   if (!emailResult.posterOk || !emailResult.schedulerOk) {
     response.email_warning = "One or more notifications could not be sent.";
+  }
+  if (!smsOk) {
+    response.sms_warning = "SMS could not be sent to the poster.";
   }
 
   return NextResponse.json(response);

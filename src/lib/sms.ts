@@ -1,0 +1,51 @@
+import twilio from "twilio";
+
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+const fromNumber = process.env.TWILIO_PHONE_NUMBER;
+
+const client =
+  accountSid && authToken ? twilio(accountSid, authToken) : null;
+
+export type CoverSmsPayload = {
+  posterPhone: string;
+  covererName: string;
+};
+
+/**
+ * Send SMS to the poster when their shift is covered.
+ * Message includes coverer name and prompt to complete the swap in UKG.
+ * If Twilio is not configured, skips send and returns { ok: false, error }.
+ */
+export async function sendCoverSms(
+  payload: CoverSmsPayload
+): Promise<{ ok: boolean; error?: string }> {
+  if (!client || !fromNumber) {
+    const msg = "Twilio not configured (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, or TWILIO_PHONE_NUMBER missing); skipping SMS";
+    console.warn("[CoverSMS]", msg);
+    return { ok: false, error: "SMS not configured" };
+  }
+
+  const to = payload.posterPhone.trim();
+  if (!to) {
+    console.warn("[CoverSMS] No poster phone on shift; skipping SMS");
+    return { ok: false, error: "No poster phone" };
+  }
+
+  const toE164 = to.includes("+") ? to : `+1${to.replace(/\D/g, "")}`;
+  const body = `${payload.covererName} has covered your shift. Please send this shift officially in UKG to complete the swap. — ShiftSwapper`;
+
+  try {
+    await client.messages.create({
+      body,
+      from: fromNumber,
+      to: toE164,
+    });
+    console.info("[CoverSMS] Sent to", toE164);
+    return { ok: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[CoverSMS] Twilio error sending to", toE164, ":", message);
+    return { ok: false, error: message };
+  }
+}
