@@ -92,6 +92,7 @@ export async function PATCH(
       { status: 404 }
     );
   }
+
   const u = session.user as { id?: string; role?: string };
   const isPoster = shift.postedByUserId === u.id;
   const isAdmin = u.role === "admin";
@@ -100,6 +101,7 @@ export async function PATCH(
       { error: "Only the poster or an admin can remove this shift", code: "FORBIDDEN" },
       { status: 403 }
     );
+  }
   let body: { status?: string };
   try {
     body = await request.json();
@@ -140,6 +142,7 @@ export async function DELETE(
       { error: "Shift not found", code: "SHIFT_NOT_FOUND" },
       { status: 404 }
     );
+  }
   const u = session.user as { id?: string; role?: string };
   const isPoster = shift.postedByUserId === u.id;
   const isAdmin = u.role === "admin";
@@ -147,7 +150,8 @@ export async function DELETE(
     return NextResponse.json(
       { error: "Only the poster or an admin can remove this shift", code: "FORBIDDEN" },
       { status: 403 }
-    }
+    );
+  }
   await prisma.shift.delete({ where: { id } });
   return new NextResponse(null, { status: 204 });
 }
