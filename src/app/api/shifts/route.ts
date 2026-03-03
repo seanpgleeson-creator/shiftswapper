@@ -123,33 +123,45 @@ export async function POST(request: NextRequest) {
       );
     }
     const posterName = [u.firstName, u.lastName].filter(Boolean).join(" ").trim() || u.name || "User";
-    const shift = await prisma.shift.create({
-      data: {
-        posterName,
-        posterEmail: u.email ?? "",
-        posterPhone,
-        location: data.location,
-        role: u.position ?? "",
-        shiftDate,
-        startTime: data.start_time,
-        endTime: data.end_time,
-        status: "open",
-        postedByUserId: u.id ?? null,
-      },
-    });
-    return NextResponse.json(
-      {
-        id: shift.id,
-        status: shift.status,
-        location: shift.location,
-        role: shift.role,
-        shift_date: shift.shiftDate.toISOString().slice(0, 10),
-        start_time: shift.startTime,
-        end_time: shift.endTime,
-        poster_name: shift.posterName,
-        created_at: shift.createdAt.toISOString(),
-      },
-      { status: 201 }
-    );
+    const role = (u.position ?? "").trim() || "Pharmacist";
+    try {
+      const shift = await prisma.shift.create({
+        data: {
+          posterName,
+          posterEmail: u.email ?? "",
+          posterPhone,
+          location: data.location,
+          role,
+          shiftDate,
+          startTime: data.start_time,
+          endTime: data.end_time,
+          status: "open",
+          postedByUserId: u.id ?? null,
+        },
+      });
+      return NextResponse.json(
+        {
+          id: shift.id,
+          status: shift.status,
+          location: shift.location,
+          role: shift.role,
+          shift_date: shift.shiftDate.toISOString().slice(0, 10),
+          start_time: shift.startTime,
+          end_time: shift.endTime,
+          poster_name: shift.posterName,
+          created_at: shift.createdAt.toISOString(),
+        },
+        { status: 201 }
+      );
+    } catch (err) {
+      console.error("POST /api/shifts error:", err);
+      return NextResponse.json(
+        {
+          error: "Failed to create shift. Please try again. If this persists, check that the database is set up and migrations have been run.",
+          code: "INTERNAL_ERROR",
+        },
+        { status: 500 }
+      );
+    }
   }
 }
