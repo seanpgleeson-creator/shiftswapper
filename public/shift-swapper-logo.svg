@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 140" width="480" height="140">
+
+  <!-- Circle emblem, centered vertically at y=70 -->
+  <!-- Outer dashed circle -->
+  <circle cx="70" cy="70" r="58" stroke="#5a8f5e" stroke-width="1.5" fill="none" stroke-dasharray="4 3"/>
+  <!-- Inner filled circle -->
+  <circle cx="70" cy="70" r="46" fill="#f0f6f0"/>
+
+  <!-- Swap arc — top (left to right) -->
+  <path d="M36 40 Q70 22 104 40" stroke="#5a8f5e" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- Arrowhead top right -->
+  <polyline points="99,35 104,40 98,44" stroke="#5a8f5e" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Swap arc — bottom (right to left) -->
+  <path d="M104 100 Q70 118 36 100" stroke="#5a8f5e" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- Arrowhead bottom left -->
+  <polyline points="42,105 36,100 42,96" stroke="#5a8f5e" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Rx letterform -->
+  <text x="38" y="88" font-family="Georgia, 'Times New Roman', serif" font-size="48" font-style="italic" font-weight="400" fill="#2c3e2d">Rx</text>
+
+  <!-- Wordmark: Shift Swapper -->
+  <text x="148" y="60" font-family="Georgia, 'Times New Roman', serif" font-size="30" font-weight="600" letter-spacing="1" fill="#2c3e2d">Shift Swapper</text>
+
+  <!-- Divider rule -->
+  <line x1="148" y1="72" x2="460" y2="72" stroke="#5a8f5e" stroke-width="0.8" opacity="0.6"/>
+
+  <!-- Tagline -->
+  <text x="148" y="92" font-family="Georgia, 'Times New Roman', serif" font-size="13" font-style="italic" letter-spacing="2.5" fill="#8aab8e">Pharmacy Shift Exchange</text>
+
+</svg>

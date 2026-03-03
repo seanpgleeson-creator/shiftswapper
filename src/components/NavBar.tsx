@@ -9,8 +9,12 @@ export function NavBar() {
   return (
     <header className="border-b border-slate-200 bg-white">
       <nav className="max-w-4xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
-        <Link href="/" className="text-xl font-semibold text-slate-800">
-          ShiftSwapper
+        <Link href="/" className="flex items-center gap-2">
+          <img
+            src="/shift-swapper-logo.svg"
+            alt="Shift Swapper"
+            className="h-8 w-auto"
+          />
         </Link>
         <ul className="flex items-center gap-4 sm:gap-6">
           <li>
