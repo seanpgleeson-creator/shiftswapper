@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 
 type Shift = {
@@ -48,7 +49,8 @@ function getCalendarDays(year: number, month: number) {
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default function CalendarPage() {
-  const { data: session } = useSession();
+  const router = useRouter();
+  const { data: session, status } = useSession();
   const today = useMemo(() => new Date(), []);
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
@@ -85,6 +87,13 @@ export default function CalendarPage() {
   );
 
   useEffect(() => {
+    if (status === "unauthenticated") {
+      router.replace("/login");
+      return;
+    }
+  }, [status, router]);
+
+  useEffect(() => {
     Promise.all([
       fetch("/api/locations").then((r) => r.json()),
       fetch("/api/roles").then((r) => r.json()),
@@ -99,14 +108,21 @@ export default function CalendarPage() {
     if (locationFilter.length > 0) locationFilter.forEach((l) => params.append("location", l));
     if (!isAuthenticated && roleFilter) params.set("role", roleFilter);
     return fetch(`/api/shifts?${params}`)
-      .then((r) => r.json())
+      .then((r) => {
+        if (r.status === 401) {
+          router.replace("/login");
+          return { shifts: [] };
+        }
+        return r.json();
+      })
       .then((data) => setShifts(data.shifts ?? []));
   }
 
   useEffect(() => {
+    if (status !== "authenticated") return;
     setLoading(true);
     refetchShifts().finally(() => setLoading(false));
-  }, [from, to, locationFilter, roleFilter, isAuthenticated, session?.user]);
+  }, [from, to, locationFilter, roleFilter, status, session?.user]);
 
   useEffect(() => {
     if (!detailShift) return;
@@ -569,11 +585,13 @@ export default function CalendarPage() {
                         const res = await fetch(`/api/shifts/${detailShift.id}/cover`, {
                           method: "PATCH",
                           headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify(
-                            isAuthenticated ? {} : { coverer_name: covererName.trim(), coverer_email: covererEmail.trim() }
-                          ),
+                          body: JSON.stringify({}),
                         });
                         const data = await res.json();
+                        if (res.status === 401) {
+                          router.replace("/login");
+                          return;
+                        }
                         if (!res.ok) {
                           setCoverError(data.error ?? "Something went wrong. Please try again.");
                           return;

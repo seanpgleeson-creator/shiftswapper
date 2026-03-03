@@ -32,6 +32,12 @@ function shiftToJson(shift: {
 
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    return NextResponse.json(
+      { error: "Sign in to view shifts", code: "UNAUTHORIZED" },
+      { status: 401 }
+    );
+  }
   const { searchParams } = new URL(request.url);
   const from = searchParams.get("from");
   const to = searchParams.get("to");

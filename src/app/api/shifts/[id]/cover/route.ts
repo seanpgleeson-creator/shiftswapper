@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { coverShiftSchema, coverShiftAuthenticatedSchema } from "@/lib/validation";
+import { coverShiftAuthenticatedSchema } from "@/lib/validation";
 import { sendCoverEmails } from "@/lib/email";
 import { sendCoverSms } from "@/lib/sms";
 import { buildGoogleCalendarUrl } from "@/lib/calendar";
@@ -13,6 +13,13 @@ export async function PATCH(
 ) {
   const { id } = await params;
   const session = await getServerSession(authOptions);
+
+  if (!session?.user) {
+    return NextResponse.json(
+      { error: "Sign in to pick up a shift", code: "UNAUTHORIZED" },
+      { status: 401 }
+    );
+  }
 
   const shift = await prisma.shift.findUnique({ where: { id } });
   if (!shift) {
@@ -29,41 +36,12 @@ export async function PATCH(
     );
   }
 
-  let covererName: string;
-  let covererEmail: string;
-
-  if (session?.user) {
-    const u = session.user as { name?: string; email?: string; firstName?: string; lastName?: string };
-    covererName = [u.firstName, u.lastName].filter(Boolean).join(" ").trim() || u.name || "User";
-    covererEmail = u.email ?? "";
-    const body = await request.json().catch(() => ({}));
-    const parsed = coverShiftAuthenticatedSchema.safeParse(body);
-    if (parsed.success && parsed.data.coverer_name && parsed.data.coverer_email) {
-      covererName = parsed.data.coverer_name;
-      covererEmail = parsed.data.coverer_email;
-    }
-  } else {
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch {
-      return NextResponse.json(
-        { error: "Invalid JSON", code: "VALIDATION_ERROR" },
-        { status: 422 }
-      );
-    }
-    const parsed = coverShiftSchema.safeParse(body);
-    if (!parsed.success) {
-      const fields = parsed.error.flatten().fieldErrors;
-      const fieldList = Object.entries(fields).map(([field, messages]) => ({
-        field,
-        message: Array.isArray(messages) ? messages[0] : messages,
-      }));
-      return NextResponse.json(
-        { error: "Validation failed", code: "VALIDATION_ERROR", fields: fieldList },
-        { status: 422 }
-      );
-    }
+  const u = session.user as { name?: string; email?: string; firstName?: string; lastName?: string };
+  let covererName = [u.firstName, u.lastName].filter(Boolean).join(" ").trim() || u.name || "User";
+  let covererEmail = u.email ?? "";
+  const body = await request.json().catch(() => ({}));
+  const parsed = coverShiftAuthenticatedSchema.safeParse(body);
+  if (parsed.success && parsed.data.coverer_name && parsed.data.coverer_email) {
     covererName = parsed.data.coverer_name;
     covererEmail = parsed.data.coverer_email;
   }
