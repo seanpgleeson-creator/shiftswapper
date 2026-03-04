@@ -6,38 +6,43 @@ import { useSession, signOut } from "next-auth/react";
 export function NavBar() {
   const { data: session, status } = useSession();
 
+  const linkClass =
+    "text-sm font-medium text-slate-600 hover:text-slate-900 min-h-[44px] flex items-center py-2 px-3 rounded-md";
+  const ctaClass =
+    "text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 min-h-[44px] flex items-center py-2 px-4 rounded-md";
+
   return (
     <header className="border-b border-slate-200 bg-white">
-      <nav className="max-w-4xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
-        <Link href="/" className="flex items-center gap-2">
+      <nav className="max-w-4xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-2 sm:gap-4">
+        <Link href="/" className="flex items-center shrink-0">
           <img
             src="/shift-swapper-logo.svg"
             alt="Shift Swapper"
             className="h-12 w-auto"
           />
         </Link>
-        <ul className="flex items-center gap-4 sm:gap-6">
+        <ul className="flex flex-wrap items-center justify-end gap-1 sm:gap-4">
           <li>
-            <Link href="/" className="text-slate-600 hover:text-slate-900 font-medium">
+            <Link href="/" className={linkClass}>
               Home
             </Link>
           </li>
           <li>
-            <Link href="/post" className="text-blue-600 hover:text-blue-800 font-semibold">
+            <Link href="/post" className={linkClass}>
               Post a Shift
             </Link>
           </li>
           <li>
-            <Link href="/calendar" className="text-slate-600 hover:text-slate-900 font-medium">
+            <Link href="/calendar" className={linkClass}>
               Browse Shifts
             </Link>
           </li>
           {status === "loading" ? (
-            <li className="text-slate-500 text-sm">…</li>
+            <li className="text-slate-500 text-sm min-h-[44px] flex items-center">…</li>
           ) : session ? (
             <>
               <li>
-                <Link href="/account" className="text-slate-600 hover:text-slate-900 font-medium">
+                <Link href="/account" className={linkClass}>
                   Account
                 </Link>
               </li>
@@ -45,7 +50,7 @@ export function NavBar() {
                 <button
                   type="button"
                   onClick={() => signOut({ callbackUrl: "/" })}
-                  className="text-slate-600 hover:text-slate-900 font-medium"
+                  className={`${linkClass} bg-transparent border-0 cursor-pointer`}
                 >
                   Log out
                 </button>
@@ -54,12 +59,12 @@ export function NavBar() {
           ) : (
             <>
               <li>
-                <Link href="/login" className="text-slate-600 hover:text-slate-900 font-medium">
+                <Link href="/login" className={linkClass}>
                   Log in
                 </Link>
               </li>
               <li>
-                <Link href="/signup" className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700">
+                <Link href="/signup" className={ctaClass}>
                   Sign up
                 </Link>
               </li>

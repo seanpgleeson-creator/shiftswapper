@@ -185,7 +185,9 @@ Goal: Live site with navigation and placeholders so every route exists.
 - [x] For shifts the current user posted, show "Remove my shift" (or "Cancel") with confirmation; call new PATCH or DELETE endpoint.
 - [x] Phone required in signup form and in post flow if not on profile.
 
-**Verify in production:** Unauthenticated /post → redirect or sign-in prompt. Log in → post shift → see "Remove my shift" on that shift → confirm → shift cancelled/removed.
+- [x] **View and pick up require login:** GET /api/shifts and PATCH /api/shifts/:id/cover return 401 if unauthenticated. /calendar redirects to /login when not signed in.
+
+**Verify in production:** Unauthenticated /post → redirect or sign-in prompt. Log in → post shift → see "Remove my shift" on that shift → confirm → shift cancelled/removed. Unauthenticated /calendar → redirect to login; only logged-in users can browse or cover shifts.
 
 ---
 
@@ -202,6 +204,13 @@ Goal: Live site with navigation and placeholders so every route exists.
 - [x] Phone required in signup and in post flow (or from profile). No new UI for SMS beyond ensuring phone is collected.
 
 **Verify in production:** Post shift with phone → another user covers → poster receives SMS with coverer name and UKG prompt.
+
+---
+
+## Polish: Nav and branding (post–6c)
+
+- [x] **Logo:** Replace nav “ShiftSwapper” text with logo image (`public/shift-swapper-logo.svg`); logo height `h-12`.
+- [x] **Nav uniformity and mobile:** All nav links use same text size and weight (text-sm, font-medium); Sign up button uses consistent tap target (min-h 44px) and padding; nav wraps cleanly on small screens with appropriate gaps.
 
 ---
 
