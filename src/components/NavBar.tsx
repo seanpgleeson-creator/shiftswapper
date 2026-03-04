@@ -41,6 +41,13 @@ export function NavBar() {
             <li className="text-slate-500 text-sm min-h-[44px] flex items-center">…</li>
           ) : session ? (
             <>
+              {(session.user as { role?: string }).role === "admin" && (
+                <li>
+                  <Link href="/admin" className={linkClass}>
+                    Admin
+                  </Link>
+                </li>
+              )}
               <li>
                 <Link href="/account" className={linkClass}>
                   Account

@@ -218,17 +218,17 @@ Goal: Live site with navigation and placeholders so every route exists.
 
 ### Backend
 
-- [ ] Admin role: when user.role === 'admin', GET /api/shifts can return all shifts (e.g. query status=all or admin=true)
-- [ ] Admin can POST /api/shifts (add shift; same shape, poster can be specified)
-- [ ] Admin can PATCH /api/shifts/:id (e.g. status: 'cancelled') or DELETE to remove/cancel shift
-- [ ] Signup notification email to admin (scheduler_email or admin_notification_email) when POST /api/auth/signup succeeds — if not already done in Feature 6
+- [x] Admin role: when user.role === 'admin', GET /api/shifts can return all shifts (e.g. query status=all or admin=true)
+- [x] Admin can POST /api/shifts (add shift; same shape, poster can be specified)
+- [x] Admin can PATCH /api/shifts/:id (e.g. status: 'cancelled') or DELETE to remove/cancel shift
+- [x] Signup notification email to admin (scheduler_email or admin_notification_email) when POST /api/auth/signup succeeds — if not already done in Feature 6
 
 ### Frontend
 
-- [ ] /admin (or admin section under /settings): visible only when user.role === 'admin'
-- [ ] Admin: list or calendar view of all shifts (open, covered, cancelled); no position filter
-- [ ] Admin: add shift form (date, time, location, role, poster if needed)
-- [ ] Admin: remove/cancel shift action from list or detail with confirmation
+- [x] /admin (or admin section under /settings): visible only when user.role === 'admin'
+- [x] Admin: list or calendar view of all shifts (open, covered, cancelled); no position filter
+- [x] Admin: add shift form (date, time, location, role, poster if needed)
+- [x] Admin: remove/cancel shift action from list or detail with confirmation
 
 **Verify in production:** Log in as admin → see all shifts → add a shift → remove/cancel a shift. New signup triggers admin email.
 

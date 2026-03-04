@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { createShiftAuthenticatedSchema } from "@/lib/validation";
+import { createShiftAuthenticatedSchema, createShiftAdminSchema } from "@/lib/validation";
 
 function shiftToJson(shift: {
   id: string;
@@ -13,6 +13,7 @@ function shiftToJson(shift: {
   startTime: string;
   endTime: string;
   posterName: string;
+  covererName: string | null;
   createdAt: Date;
   postedByUserId: string | null;
 }) {
@@ -25,6 +26,7 @@ function shiftToJson(shift: {
     start_time: shift.startTime,
     end_time: shift.endTime,
     poster_name: shift.posterName,
+    coverer_name: shift.covererName ?? undefined,
     created_at: shift.createdAt.toISOString(),
     posted_by_user_id: shift.postedByUserId ?? undefined,
   };
@@ -43,20 +45,26 @@ export async function GET(request: NextRequest) {
   const to = searchParams.get("to");
   const locations = searchParams.getAll("location").filter(Boolean);
   let role = searchParams.get("role");
+  const statusParam = searchParams.get("status");
+  const adminParam = searchParams.get("admin");
+
+  const userRole = (session.user as { role?: string }).role;
+  const isAdmin = userRole === "admin";
+  const showAllStatuses = isAdmin && (statusParam === "all" || adminParam === "true");
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const start = from ? new Date(from + "T12:00:00.000Z") : new Date(today.getFullYear(), today.getMonth(), 1);
   const end = to ? new Date(to + "T12:00:00.000Z") : new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
-  if (session?.user && (session.user as { role?: string }).role === "member") {
+  if (!isAdmin && userRole === "member") {
     const position = (session.user as { position?: string }).position;
     if (position) role = role || position;
   }
 
   const shifts = await prisma.shift.findMany({
     where: {
-      status: "open",
+      ...(showAllStatuses ? {} : { status: "open" }),
       shiftDate: { gte: start, lte: end },
       ...(locations.length > 0 ? { location: { in: locations } } : {}),
       ...(role ? { role } : {}),
@@ -70,6 +78,7 @@ export async function GET(request: NextRequest) {
       startTime: true,
       endTime: true,
       posterName: true,
+      covererName: true,
       createdAt: true,
       postedByUserId: true,
     },
@@ -97,8 +106,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  {
-    const parsed = createShiftAuthenticatedSchema.safeParse(body);
+  const u = session.user as { id?: string; email?: string; name?: string; firstName?: string; lastName?: string; position?: string; phone?: string; role?: string };
+  const isAdmin = u.role === "admin";
+
+  if (isAdmin) {
+    const parsed = createShiftAdminSchema.safeParse(body);
     if (!parsed.success) {
       const fields = parsed.error.flatten().fieldErrors;
       const fieldList = Object.entries(fields).map(([field, messages]) => ({
@@ -106,43 +118,25 @@ export async function POST(request: NextRequest) {
         message: Array.isArray(messages) ? messages[0] : messages,
       }));
       return NextResponse.json(
-        {
-          error: "Validation failed",
-          code: "VALIDATION_ERROR",
-          fields: fieldList,
-        },
+        { error: "Validation failed", code: "VALIDATION_ERROR", fields: fieldList },
         { status: 422 }
       );
     }
     const data = parsed.data;
     const shiftDate = new Date(data.shift_date + "T12:00:00.000Z");
-    const u = session.user as { id?: string; email?: string; name?: string; firstName?: string; lastName?: string; position?: string; phone?: string };
-    const posterPhone = (data.poster_phone?.trim() || u.phone?.trim() || "").trim() || null;
-    if (!posterPhone) {
-      return NextResponse.json(
-        {
-          error: "Phone is required for posting (for SMS notifications). Add it in your account or enter it when posting.",
-          code: "VALIDATION_ERROR",
-          fields: [{ field: "poster_phone", message: "Phone is required for SMS notifications" }],
-        },
-        { status: 422 }
-      );
-    }
-    const posterName = [u.firstName, u.lastName].filter(Boolean).join(" ").trim() || u.name || "User";
-    const role = (u.position ?? "").trim() || "Pharmacist";
     try {
       const shift = await prisma.shift.create({
         data: {
-          posterName,
-          posterEmail: u.email ?? "",
-          posterPhone,
+          posterName: data.poster_name.trim(),
+          posterEmail: data.poster_email.trim(),
+          posterPhone: data.poster_phone.trim(),
           location: data.location,
-          role,
+          role: data.role,
           shiftDate,
           startTime: data.start_time,
           endTime: data.end_time,
           status: "open",
-          postedByUserId: u.id ?? null,
+          postedByUserId: null,
         },
       });
       return NextResponse.json(
@@ -162,12 +156,80 @@ export async function POST(request: NextRequest) {
     } catch (err) {
       console.error("POST /api/shifts error:", err);
       return NextResponse.json(
-        {
-          error: "Failed to create shift. Please try again. If this persists, check that the database is set up and migrations have been run.",
-          code: "INTERNAL_ERROR",
-        },
+        { error: "Failed to create shift. Please try again.", code: "INTERNAL_ERROR" },
         { status: 500 }
       );
     }
+  }
+
+  const parsed = createShiftAuthenticatedSchema.safeParse(body);
+  if (!parsed.success) {
+    const fields = parsed.error.flatten().fieldErrors;
+    const fieldList = Object.entries(fields).map(([field, messages]) => ({
+      field,
+      message: Array.isArray(messages) ? messages[0] : messages,
+    }));
+    return NextResponse.json(
+      {
+        error: "Validation failed",
+        code: "VALIDATION_ERROR",
+        fields: fieldList,
+      },
+      { status: 422 }
+    );
+  }
+  const data = parsed.data;
+  const shiftDate = new Date(data.shift_date + "T12:00:00.000Z");
+  const posterPhone = (data.poster_phone?.trim() || u.phone?.trim() || "").trim() || null;
+  if (!posterPhone) {
+    return NextResponse.json(
+      {
+        error: "Phone is required for posting (for SMS notifications). Add it in your account or enter it when posting.",
+        code: "VALIDATION_ERROR",
+        fields: [{ field: "poster_phone", message: "Phone is required for SMS notifications" }],
+      },
+      { status: 422 }
+    );
+  }
+  const posterName = [u.firstName, u.lastName].filter(Boolean).join(" ").trim() || u.name || "User";
+  const role = (u.position ?? "").trim() || "Pharmacist";
+  try {
+    const shift = await prisma.shift.create({
+      data: {
+        posterName,
+        posterEmail: u.email ?? "",
+        posterPhone,
+        location: data.location,
+        role,
+        shiftDate,
+        startTime: data.start_time,
+        endTime: data.end_time,
+        status: "open",
+        postedByUserId: u.id ?? null,
+      },
+    });
+    return NextResponse.json(
+      {
+        id: shift.id,
+        status: shift.status,
+        location: shift.location,
+        role: shift.role,
+        shift_date: shift.shiftDate.toISOString().slice(0, 10),
+        start_time: shift.startTime,
+        end_time: shift.endTime,
+        poster_name: shift.posterName,
+        created_at: shift.createdAt.toISOString(),
+      },
+      { status: 201 }
+    );
+  } catch (err) {
+    console.error("POST /api/shifts error:", err);
+    return NextResponse.json(
+      {
+        error: "Failed to create shift. Please try again. If this persists, check that the database is set up and migrations have been run.",
+        code: "INTERNAL_ERROR",
+      },
+      { status: 500 }
+    );
   }
 }
