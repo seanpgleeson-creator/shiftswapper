@@ -63,7 +63,7 @@ The landing page loads instantly. When auth is implemented, unauthenticated user
 
 **Purpose:** Let a new team member create an account.
 
-**Form fields:** First name, Last name, Email, Position (single dropdown — initial option "Pharmacist"; list from GET /api/roles), **Phone (required, for SMS)**.  Password (or "Send magic link" if using magic-link auth). Submit → POST /api/auth/signup; on success redirect to `/` or `/calendar` and establish session.
+**Form fields:** First name, Last name, Email, Position (single dropdown — list from GET /api/roles: Pharmacist, Technician, Intern), **Phone (required, for SMS)**.  Password (or "Send magic link" if using magic-link auth). Submit → POST /api/auth/signup; on success redirect to `/` or `/calendar` and establish session.
 
 **UX note:** After signup, the admin receives an email with the new user's first name, last name, email, and position so they can validate the user is an employee.
 
@@ -90,7 +90,7 @@ Email + password (or magic link). POST /api/auth/login; on success redirect to `
 | Shift Date         | Date picker       | Yes      | Native date input on mobile, calendar widget on desktop. Default: tomorrow.                   |
 | Shift Start Time   | Time picker       | Yes      | Native time input. 15-min increments suggested.                                               |
 | Shift End Time     | Time picker       | Yes      | Must be after start time. Validation inline.                                                  |
-| Location           | Dropdown/select   | Yes      | Options: Red Pharmacy, CSC Pharmacy, Shapiro Pharmacy, Whittier Pharmacy, Green Pharmacy, Speciality Pharmacy, Brooklyn Park Pharmacy, St. Anthony Pharmacy, Richfield Pharmacy, North Loop Pharmacy. |
+| Location           | Dropdown/select   | Yes      | Options: Red Pharmacy, CSC Pharmacy, Shapiro Pharmacy, Whittier Pharmacy, Enhanced Care, Speciality Pharmacy, Brooklyn Park Pharmacy, St. Anthony Pharmacy, Richfield Pharmacy, North Loop Pharmacy. |
 | Mobile Phone       | Tel input         | Yes      | From profile if present; otherwise one required field (for SMS notifications).                |
 
 Your name, email, and role (position) come from the session and are not shown or are read-only. Submit sends minimal body; server fills poster from session. **Phone** is required (from profile or one required field).
@@ -115,11 +115,11 @@ Your name, email, and role (position) come from the session and are not shown or
 
 **Layout:**
 
-- **Month calendar grid** -- standard 7-column grid. Days with available shifts show a badge/dot indicator with the count of open shifts.
+- **Month calendar grid** -- standard 7-column grid. Days with available shifts show a badge/dot indicator with the count of open shifts. **Pay-period banding:** Apply a light gray background to every other two-week block so users can see pay periods and swap within the same period. Pattern: first gray block = March 8–21, then default March 22–April 4, then gray April 5–18, etc., from a fixed March 8 anchor continuing indefinitely.
 - **Navigation** -- left/right arrows to move between months. A "Today" button to jump back.
 - **Filter bar** (above or beside the calendar):
   - Location filter — multi-select checkboxes or pill toggles for the 10 pharmacy locations. Default: all selected.
-  - Role filter — dropdown. **When authenticated as member:** hide or default to the user's position; calendar shows only shifts for the user's position (e.g. Pharmacist sees only Pharmacist shifts; when Technician, Cashier exist, they see only their role). **When unauthenticated or admin:** role filter as today (all roles or user selection).
+  - Role filter — dropdown. **When authenticated as member:** hide or default to the user's position; calendar shows only shifts for the user's position (e.g. Pharmacist, Technician, or Intern sees only shifts for their role). **When unauthenticated or admin:** role filter as today (all roles or user selection).
 - **Day click behavior** -- tapping a day with available shifts expands a panel below the calendar (on mobile) or to the right (on desktop) showing a list of shifts for that day.
 
 **Shift list (for a selected day):**
@@ -138,7 +138,7 @@ Tapping a shift card opens the Shift Detail view.
 
 - If no shifts exist for the selected month: "No shifts posted for [Month]. Check back soon!"
 - If filters eliminate all results: "No shifts match your filters. Try broadening your search."
-- **When logged in as member:** If no shifts match the user's position: e.g. "No [Pharmacist] shifts this month."
+- **When logged in as member:** If no shifts match the user's position: e.g. "No [Pharmacist/Technician/Intern] shifts this month."
 
 ---
 
@@ -179,6 +179,7 @@ Tapping a shift card opens the Shift Detail view.
 
 - The confirmation step is critical -- accidentally covering a shift triggers real emails. The dialog must be explicit.
 - After a shift is covered, it should disappear from the calendar (or be visually marked as "Covered" and non-clickable) so other users do not try to claim it.
+- The poster receives an SMS on cover that includes the coverer's name and phone number (and UKG prompt); see backend/SMS content for details.
 
 ---
 

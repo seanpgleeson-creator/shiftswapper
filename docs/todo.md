@@ -249,6 +249,62 @@ Goal: Live site with navigation and placeholders so every route exists.
 
 ---
 
+## Feature: Pay-period indication on calendar
+
+### Backend
+
+- No backend tasks (display only).
+
+### Frontend
+
+- [ ] Calendar month grid applies alternating two-week background (light gray vs default); first gray block = March 8–21; pattern continues from that anchor indefinitely.
+
+**Verify in production:** Calendar shows gray bands on correct two-week chunks (March 8–21 gray, March 22–April 4 default, etc.).
+
+---
+
+## Feature: Rename Green Pharmacy to Enhanced Care
+
+### Backend
+
+- [ ] Update locations constant (and any seeds/docs that list locations): "Green Pharmacy" → "Enhanced Care".
+
+### Frontend
+
+- [ ] All location dropdowns and filters use "Enhanced Care" instead of "Green Pharmacy" (locations come from API).
+
+**Verify in production:** Post, browse, and admin show "Enhanced Care"; no "Green Pharmacy" in UI.
+
+---
+
+## Feature: Add Technician and Intern roles
+
+### Backend
+
+- [ ] Add "Technician" and "Intern" to roles constant; GET /api/roles returns Pharmacist, Technician, Intern; validation accepts all three for shift role and user position.
+
+### Frontend
+
+- [ ] Signup and post position/role dropdowns include Technician and Intern; calendar role filter includes them.
+
+**Verify in production:** Can sign up and post as Technician or Intern; calendar filters by role.
+
+---
+
+## Feature: Coverer name and phone in SMS to poster
+
+### Backend
+
+- [ ] Add `coverer_phone` to shifts table (nullable); on cover, set from session; SMS payload and content include coverer name and coverer phone; document in backend.
+
+### Frontend
+
+- [ ] No change if cover is login-only (phone from session).
+
+**Verify in production:** After cover, poster receives SMS with coverer name and phone and UKG prompt.
+
+---
+
 ## Parallel Work Summary
 
 | Phase / Feature | Can run in parallel |

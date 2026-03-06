@@ -33,13 +33,14 @@ The central table. One row per posted shift.
 | poster_email  | VARCHAR     | NOT NULL                 | Never exposed to the browser                  |
 | poster_phone  | VARCHAR     | NOT NULL when posting   | Required for SMS; when posted by user, from user.phone |
 | location      | VARCHAR     | NOT NULL                 | Validated against the allowed locations list  |
-| role          | VARCHAR     | NOT NULL                 | "Pharmacist" for MVP; validated against enum  |
+| role          | VARCHAR     | NOT NULL                 | Pharmacist, Technician, or Intern; validated against roles list |
 | shift_date    | DATE        | NOT NULL                 |                                               |
 | start_time    | TIME        | NOT NULL                 |                                               |
 | end_time      | TIME        | NOT NULL                 | Must be after start_time (enforced in API)    |
 | status        | VARCHAR     | NOT NULL, DEFAULT 'open' | open / covered / cancelled                    |
 | coverer_name  | VARCHAR     | NULL                     | Populated when shift is covered               |
 | coverer_email | VARCHAR     | NULL                     | Populated when shift is covered               |
+| coverer_phone | VARCHAR     | NULL                     | Populated when shift is covered (from session when authenticated); used in SMS to poster |
 | posted_by_user_id | UUID     | NULL, FK → users(id)     | Set when shift is posted by a logged-in user  |
 | created_at    | TIMESTAMPTZ | NOT NULL, DEFAULT now()  |                                               |
 | covered_at    | TIMESTAMPTZ | NULL                     | Populated when shift is covered               |
@@ -89,7 +90,7 @@ Red Pharmacy
 CSC Pharmacy
 Shapiro Pharmacy
 Whittier Pharmacy
-Green Pharmacy
+Enhanced Care
 Speciality Pharmacy
 Brooklyn Park Pharmacy
 St. Anthony Pharmacy
@@ -99,13 +100,19 @@ North Loop Pharmacy
 
 ### Roles / positions
 
-The same list is used for shift `role` and user `position`. Initial value: `["Pharmacist"]`; extend later with e.g. Technician, Cashier.
+The same list is used for shift `role` and user `position`. Values: Pharmacist, Technician, Intern.
 
 ```
 Pharmacist
+Technician
+Intern
 ```
 
 GET /api/roles returns this list. It is used for the sign-up position dropdown and for shift role validation.
+
+### Pay periods (calendar display only)
+
+Pay periods are two-week blocks used only for calendar display so users can ensure they are swapping shifts within the same pay period. No API or database change: the calendar grid applies a light gray background to every other two-week chunk. The first gray block starts March 8 (e.g. March 8–21 = first pay period, March 22–April 4 = second, then alternating). The anchor is fixed (e.g. March 8 of a reference year) so the pattern extends indefinitely in both directions.
 
 ---
 
@@ -191,7 +198,7 @@ Only shifts with `status = 'open'` are returned by default for members and unaut
 
 #### PATCH /api/shifts/:id/cover
 
-**When authenticated:** coverer_name, coverer_email (and optionally coverer_phone) come from session; body can be empty or only a confirmation flag.
+**When authenticated:** coverer_name, coverer_email, and coverer_phone come from session and are stored on the shift; SMS on cover uses coverer name and coverer phone. Body can be empty or only a confirmation flag.
 
 **When unauthenticated:** body required:
 
@@ -259,7 +266,7 @@ Executed in a single database transaction where possible:
 1. Fetch shift by ID. Return 404 if not found.
 2. Check `status === 'open'`. Return 409 if already covered or cancelled.
 3. Validate `coverer_name` (required) and `coverer_email` (required, valid email format).
-4. Update the row: set `status = 'covered'`, `coverer_name`, `coverer_email`, `covered_at = now()`.
+4. Update the row: set `status = 'covered'`, `coverer_name`, `coverer_email`, `coverer_phone` (from session when authenticated), `covered_at = now()`.
 5. Fetch `scheduler_email` from the settings table.
 6. Send two notification emails (see Section 7). Email failure is logged but does NOT roll back the database update -- the shift remains covered.
 7. Return the updated shift object.
@@ -315,7 +322,7 @@ Both emails (and SMS when implemented) are sent immediately after a successful c
 ### SMS on cover
 
 - **To:** poster (e.g. `poster_phone` from the shift record).
-- **Content:** Include the **coverer name** and a **prompt to send the shift officially in UKG** (e.g. "Send this shift officially in UKG to complete the swap."). Shift Swapper is separate from UKG; manual transfer is required.
+- **Content:** Include the **coverer name** and **coverer phone number**, plus a **prompt to send the shift officially in UKG** (e.g. "Send this shift officially in UKG to complete the swap."). Shift Swapper is separate from UKG; manual transfer is required. `coverer_phone` is stored on the shift at cover time (from session when authenticated) and passed into the SMS payload.
 - **Implementation:** Use Twilio (or similar) API. Document env vars: e.g. `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` (or equivalent). SMS is additive; email behavior is unchanged. If SMS send fails, log and do not roll back the cover.
 - **Twilio trial:** Trial accounts can only send SMS to verified caller IDs. In Twilio Console → Phone Numbers → Manage → Verified Caller IDs, add the poster’s number (and any test numbers). Production accounts do not have this restriction.
 
