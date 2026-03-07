@@ -21,7 +21,10 @@ export async function PATCH(
     );
   }
 
-  const shift = await prisma.shift.findUnique({ where: { id } });
+  const shift = await prisma.shift.findUnique({
+    where: { id },
+    include: { postedByUser: true },
+  });
   if (!shift) {
     return NextResponse.json(
       { error: "Shift not found", code: "SHIFT_NOT_FOUND" },
@@ -79,17 +82,21 @@ export async function PATCH(
   }
 
   let smsOk = true;
-  if (shift.posterPhone?.trim()) {
+  const posterConsented =
+    shift.postedByUserId &&
+    shift.postedByUser?.smsConsent === true &&
+    (shift.posterPhone?.trim() ?? "").length > 0;
+  if (posterConsented) {
     const smsResult = await sendCoverSms({
-      posterPhone: shift.posterPhone,
+      posterPhone: shift.posterPhone!,
       covererName,
     });
     smsOk = smsResult.ok;
     if (!smsResult.ok) {
       console.error("[Cover] SMS failed:", smsResult.error);
     }
-  } else {
-    console.warn("[Cover] No posterPhone on shift", shift.id, "; SMS skipped");
+  } else if (shift.posterPhone?.trim()) {
+    console.warn("[Cover] SMS skipped: poster has not opted in or shift has no posted_by_user_id", shift.id);
   }
 
   const timezone = settings?.timezone ?? "America/Chicago";

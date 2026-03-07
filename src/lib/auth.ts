@@ -28,6 +28,8 @@ export const authOptions: NextAuthOptions = {
           position: user.position,
           phone: user.phone ?? undefined,
           role: user.role,
+          smsConsent: user.smsConsent,
+          smsConsentAt: user.smsConsentAt?.toISOString() ?? undefined,
         };
       },
     }),
@@ -41,6 +43,8 @@ export const authOptions: NextAuthOptions = {
         token.position = (user as { position?: string }).position;
         token.phone = (user as { phone?: string }).phone;
         token.role = (user as { role?: string }).role;
+        token.smsConsent = (user as { smsConsent?: boolean }).smsConsent;
+        token.smsConsentAt = (user as { smsConsentAt?: string }).smsConsentAt;
       }
       return token;
     },
@@ -52,6 +56,8 @@ export const authOptions: NextAuthOptions = {
         (session.user as { position?: string }).position = token.position as string;
         (session.user as { phone?: string }).phone = token.phone as string | undefined;
         (session.user as { role?: string }).role = token.role as string;
+        (session.user as { smsConsent?: boolean }).smsConsent = token.smsConsent as boolean | undefined;
+        (session.user as { smsConsentAt?: string }).smsConsentAt = token.smsConsentAt as string | undefined;
       }
       return session;
     },

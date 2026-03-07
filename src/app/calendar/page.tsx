@@ -46,12 +46,17 @@ function getCalendarDays(year: number, month: number) {
   return days;
 }
 
-// Pay-period anchor: first gray block = March 8–21; alternating 14-day periods after that.
-const PAY_PERIOD_ANCHOR_MS = new Date(2000, 2, 8).getTime();
+// Pay-period anchor: first gray block = March 8–21 (UTC); alternating 14-day periods. Timezone-safe.
+const PAY_PERIOD_ANCHOR_MS = Date.UTC(2000, 2, 8); // March 8, 2000 00:00 UTC
 const MS_PER_14_DAYS = 14 * 24 * 60 * 60 * 1000;
 
 function isPayPeriodGray(date: Date): boolean {
-  const periodIndex = Math.floor((date.getTime() - PAY_PERIOD_ANCHOR_MS) / MS_PER_14_DAYS);
+  const dayStartUTC = Date.UTC(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate()
+  );
+  const periodIndex = Math.floor((dayStartUTC - PAY_PERIOD_ANCHOR_MS) / MS_PER_14_DAYS);
   return periodIndex % 2 === 0;
 }
 

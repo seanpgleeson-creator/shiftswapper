@@ -271,8 +271,8 @@ Goal: Live site with navigation and placeholders so every route exists.
 
 ### Fix
 
-- [ ] Correct pay-period grayscale so it follows the requested date pattern (March 8–21 = first gray block; alternating 14-day periods from that anchor).
-- [ ] Verify anchor and 14-day boundaries using timezone-safe date math so gray bands align with March 8–21, March 22–April 4, etc.
+- [x] Correct pay-period grayscale so it follows the requested date pattern (March 8–21 = first gray block; alternating 14-day periods from that anchor).
+- [x] Verify anchor and 14-day boundaries using timezone-safe date math so gray bands align with March 8–21, March 22–April 4, etc.
 - [ ] Re-verify in production: calendar shows gray bands on correct two-week chunks.
 
 **Verify in production:** Calendar shows gray bands on correct two-week chunks (March 8–21 gray, March 22–April 4 default, etc.).
@@ -325,15 +325,15 @@ Goal: Live site with navigation and placeholders so every route exists.
 
 ### Backend
 
-- [ ] Add `sms_consent` (boolean, NOT NULL, default false) and `sms_consent_at` (timestamp, NULL) to the users table (Prisma migration).
-- [ ] POST /api/auth/signup: accept `sms_consent` in body; require `sms_consent === true` for signup to succeed; set `sms_consent_at` to current time when true.
-- [ ] GET /api/me (or session): include `sms_consent` (and optionally `sms_consent_at`) in the returned user object.
-- [ ] Cover flow: when sending SMS to the poster, only call the SMS sender if the poster is a user (`posted_by_user_id` set) and that user has `sms_consent === true`. For shifts with no `posted_by_user_id`, do not send SMS (consent unknown).
+- [x] Add `sms_consent` (boolean, NOT NULL, default false) and `sms_consent_at` (timestamp, NULL) to the users table (Prisma migration).
+- [x] POST /api/auth/signup: accept `sms_consent` in body; require `sms_consent === true` for signup to succeed; set `sms_consent_at` to current time when true.
+- [x] GET /api/me (or session): include `sms_consent` (and optionally `sms_consent_at`) in the returned user object.
+- [x] Cover flow: when sending SMS to the poster, only call the SMS sender if the poster is a user (`posted_by_user_id` set) and that user has `sms_consent === true`. For shifts with no `posted_by_user_id`, do not send SMS (consent unknown).
 
 ### Frontend
 
-- [ ] Signup form: add a required checkbox, unchecked by default, with label: "I agree to receive SMS notifications for shift swap updates. Message & data rates may apply. Reply STOP to opt out."
-- [ ] Submit disabled until the checkbox is checked; send `sms_consent: true` in the signup request (server sets `sms_consent_at`).
+- [x] Signup form: add a required checkbox, unchecked by default, with label: "I agree to receive SMS notifications for shift swap updates. Message & data rates may apply. Reply STOP to opt out."
+- [x] Submit disabled until the checkbox is checked; send `sms_consent: true` in the signup request (server sets `sms_consent_at`).
 
 **Verify in production:** Sign up with checkbox checked → user row has `sms_consent` true and `sms_consent_at` set; sign up without checking fails validation; when a user who has not opted in has their shift covered, they do not receive SMS.
 

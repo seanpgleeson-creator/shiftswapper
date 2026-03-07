@@ -29,6 +29,7 @@ export default function SignupPage() {
     position: "",
     phone: "",
     password: "",
+    sms_consent: false,
   });
 
   useEffect(() => {
@@ -56,6 +57,7 @@ export default function SignupPage() {
           position: form.position,
           phone: form.phone.trim(),
           password: form.password,
+          sms_consent: true,
         }),
       });
       const data = await res.json();
@@ -217,6 +219,27 @@ export default function SignupPage() {
           )}
         </div>
         <div>
+          <label className="flex gap-3 items-start cursor-pointer">
+            <input
+              type="checkbox"
+              id="sms_consent"
+              checked={form.sms_consent}
+              onChange={(e) => setForm((p) => ({ ...p, sms_consent: e.target.checked }))}
+              className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+              aria-required
+            />
+            <span className="text-sm text-slate-700">
+              I agree to receive SMS notifications for shift swap updates. Message &amp; data rates may apply. Reply STOP to opt out. <span className="text-red-500">*</span>
+            </span>
+          </label>
+          {errors.sms_consent && (
+            <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600">
+              <ErrorIcon className="flex-shrink-0 mt-0.5" />
+              {errors.sms_consent}
+            </p>
+          )}
+        </div>
+        <div>
           <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">
             Password <span className="text-red-500">*</span>
           </label>
@@ -240,7 +263,7 @@ export default function SignupPage() {
         </div>
         <button
           type="submit"
-          disabled={submitting || !form.first_name.trim() || !form.last_name.trim() || !form.email.trim() || !form.position || !form.phone.trim() || !form.password}
+          disabled={submitting || !form.first_name.trim() || !form.last_name.trim() || !form.email.trim() || !form.position || !form.phone.trim() || !form.password || !form.sms_consent}
           className="w-full min-h-[44px] rounded-md bg-blue-600 px-4 py-2.5 font-medium text-white shadow-sm hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none"
         >
           {submitting ? "Creating account…" : "Sign up"}

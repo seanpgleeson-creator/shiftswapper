@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
   }
 
   const passwordHash = await hash(data.password, 12);
+  const now = new Date();
   const user = await prisma.user.create({
     data: {
       firstName: data.first_name.trim(),
@@ -53,6 +54,8 @@ export async function POST(request: NextRequest) {
       phone: data.phone?.trim() || null,
       position: data.position,
       role: "member",
+      smsConsent: data.sms_consent === true,
+      smsConsentAt: data.sms_consent === true ? now : null,
     },
   });
 
@@ -78,6 +81,8 @@ export async function POST(request: NextRequest) {
         position: user.position,
         phone: user.phone,
         role: user.role,
+        sms_consent: user.smsConsent,
+        sms_consent_at: user.smsConsentAt?.toISOString() ?? null,
       },
       message: "Account created. Please sign in.",
     },

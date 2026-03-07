@@ -61,6 +61,9 @@ export const signupSchema = z
       .min(1, "Phone is required for SMS notifications")
       .refine((v) => /^[\d\s\-+()]{10,}$/.test(v), "Invalid phone format"),
     password: z.string().min(8, "Password must be at least 8 characters"),
+    sms_consent: z.literal(true, {
+      errorMap: () => ({ message: "You must agree to receive SMS notifications to sign up." }),
+    }),
   });
 
 export type SignupInput = z.infer<typeof signupSchema>;

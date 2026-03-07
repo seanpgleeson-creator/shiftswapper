@@ -11,18 +11,20 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  firstName    String   @map("first_name")
-  lastName     String   @map("last_name")
-  email        String   @unique
-  passwordHash String   @map("password_hash")
-  phone        String?
-  position     String   // e.g. Pharmacist; validated against ROLES
-  role         String   @default("member") // member | admin
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id            String    @id @default(uuid())
+  firstName     String    @map("first_name")
+  lastName      String    @map("last_name")
+  email         String    @unique
+  passwordHash  String    @map("password_hash")
+  phone         String?
+  position      String    // e.g. Pharmacist; validated against ROLES
+  role          String    @default("member") // member | admin
+  smsConsent    Boolean   @default(false) @map("sms_consent")
+  smsConsentAt  DateTime? @map("sms_consent_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
 
-  shiftsPosted Shift[]  @relation("PostedBy")
+  shiftsPosted  Shift[]   @relation("PostedBy")
 
   @@map("users")
 }

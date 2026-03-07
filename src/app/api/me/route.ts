@@ -19,6 +19,8 @@ export async function GET() {
     position?: string;
     phone?: string;
     role?: string;
+    smsConsent?: boolean;
+    smsConsentAt?: string;
   };
 
   return NextResponse.json({
@@ -29,5 +31,7 @@ export async function GET() {
     position: u.position,
     phone: u.phone,
     role: u.role,
+    sms_consent: u.smsConsent,
+    sms_consent_at: u.smsConsentAt ?? null,
   });
 }
