@@ -39,9 +39,10 @@ export async function PATCH(
     );
   }
 
-  const u = session.user as { name?: string; email?: string; firstName?: string; lastName?: string };
+  const u = session.user as { name?: string; email?: string; firstName?: string; lastName?: string; phone?: string };
   let covererName = [u.firstName, u.lastName].filter(Boolean).join(" ").trim() || u.name || "User";
   let covererEmail = u.email ?? "";
+  let covererPhone = u.phone?.trim() ?? null;
   const body = await request.json().catch(() => ({}));
   const parsed = coverShiftAuthenticatedSchema.safeParse(body);
   if (parsed.success && parsed.data.coverer_name && parsed.data.coverer_email) {
@@ -57,6 +58,7 @@ export async function PATCH(
       status: "covered",
       covererName,
       covererEmail,
+      covererPhone,
       coveredAt,
     },
   });
@@ -90,6 +92,7 @@ export async function PATCH(
     const smsResult = await sendCoverSms({
       posterPhone: shift.posterPhone!,
       covererName,
+      covererPhone: updated.covererPhone,
     });
     smsOk = smsResult.ok;
     if (!smsResult.ok) {
@@ -122,6 +125,7 @@ export async function PATCH(
     end_time: updated.endTime,
     poster_name: updated.posterName,
     coverer_name: updated.covererName,
+    coverer_phone: updated.covererPhone ?? undefined,
     created_at: updated.createdAt.toISOString(),
     google_calendar_url: googleCalendarUrl,
   };

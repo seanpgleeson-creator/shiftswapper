@@ -10,11 +10,12 @@ const client =
 export type CoverSmsPayload = {
   posterPhone: string;
   covererName: string;
+  covererPhone?: string | null;
 };
 
 /**
  * Send SMS to the poster when their shift is covered.
- * Message includes coverer name and prompt to complete the swap in UKG.
+ * Message includes coverer name, coverer phone (if provided), and prompt to complete the swap in UKG.
  * If Twilio is not configured, skips send and returns { ok: false, error }.
  */
 export async function sendCoverSms(
@@ -33,7 +34,11 @@ export async function sendCoverSms(
   }
 
   const toE164 = to.includes("+") ? to : `+1${to.replace(/\D/g, "")}`;
-  const body = `${payload.covererName} has covered your shift. Please send this shift officially in UKG to complete the swap. — ShiftSwapper`;
+  const phoneLine =
+    payload.covererPhone?.trim() ?
+      ` You can reach them at ${payload.covererPhone.trim()}.`
+    : "";
+  const body = `${payload.covererName} has covered your shift.${phoneLine} Please send this shift officially in UKG to complete the swap. — ShiftSwapper`;
 
   try {
     await client.messages.create({

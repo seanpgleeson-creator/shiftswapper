@@ -244,21 +244,6 @@ Goal: Live site with navigation and placeholders so every route exists.
 
 ---
 
-## Feature 8: Calendar sync
-
-### Backend
-
-- [ ] GET /api/me/calendar (authenticated): return .ics feed of all shifts the current user has covered (same format as GET /api/shifts/:id/calendar); Content-Type text/calendar; optional token-based URL for subscription if needed
-
-### Frontend
-
-- [ ] Account page or post-cover success: "Sync your calendar" — copy and instructions; "Copy feed URL" button for authenticated feed URL so user can subscribe in Google Calendar / Outlook / Apple Calendar
-- [ ] Explain that once subscribed, covered shifts appear automatically without downloading a file per shift
-
-**Verify in production:** Log in → cover a shift → copy feed URL → add to calendar app → confirm covered shift appears; cover another shift → confirm it appears in feed.
-
----
-
 ## Feature 9: Pay-period indication on calendar
 
 ### Backend
@@ -275,7 +260,7 @@ Goal: Live site with navigation and placeholders so every route exists.
 - [x] Verify anchor and 14-day boundaries using timezone-safe date math so gray bands align with March 8–21, March 22–April 4, etc.
 - [x] Use calendar-date-based period calculation: each cell’s displayed (year, month, day) is interpreted in UTC for the 14-day period, so bands are correct regardless of user timezone.
 - [x] Use a stronger gray (e.g. slate-200) for the pay-period block so bands are clearly visible vs white.
-- [ ] Re-verify in production: calendar shows gray bands on correct two-week chunks.
+- [x] Re-verify in production: calendar shows gray bands on correct two-week chunks.
 
 **Verify in production:** Calendar shows gray bands on correct two-week chunks (March 8–21 gray, March 22–April 4 default, etc.).
 
@@ -313,11 +298,11 @@ Goal: Live site with navigation and placeholders so every route exists.
 
 ### Backend
 
-- [ ] Add `coverer_phone` to shifts table (nullable); on cover, set from session; SMS payload and content include coverer name and coverer phone; document in backend.
+- [x] Add `coverer_phone` to shifts table (nullable); on cover, set from session; SMS payload and content include coverer name and coverer phone; document in backend.
 
 ### Frontend
 
-- [ ] No change if cover is login-only (phone from session).
+- [x] No change if cover is login-only (phone from session).
 
 **Verify in production:** After cover, poster receives SMS with coverer name and phone and UKG prompt.
 
@@ -355,7 +340,6 @@ Goal: Live site with navigation and placeholders so every route exists.
 | **Feature 6b: Login + poster remove** | POST auth + PATCH/DELETE ownership \| /post redirect, "Remove my shift" UI |
 | **Feature 6c: SMS**              | poster_phone + Twilio on cover \| Phone in signup/post |
 | **Feature 7: Admin**             | Admin shifts API \| Admin UI (all shifts, add, remove) |
-| **Feature 8: Calendar sync**      | GET /api/me/calendar \| Copy feed URL + instructions |
 | **Feature 9: Pay-period indication** | Display only (calendar grid styling) |
 | **Feature 10: Rename Green Pharmacy** | Backend (locations constant) \| Frontend (dropdowns/filters) |
 | **Feature 11: Technician and Intern roles** | Backend (roles constant) \| Frontend (signup, post, filters) |

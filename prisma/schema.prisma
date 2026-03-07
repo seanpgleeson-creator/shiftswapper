@@ -42,6 +42,7 @@ model Shift {
   status           String    @default("open")   // open | covered | cancelled
   covererName      String?   @map("coverer_name")
   covererEmail     String?   @map("coverer_email")
+  covererPhone     String?   @map("coverer_phone")
   postedByUserId   String?   @map("posted_by_user_id")
   createdAt        DateTime  @default(now()) @map("created_at")
   coveredAt        DateTime? @map("covered_at")

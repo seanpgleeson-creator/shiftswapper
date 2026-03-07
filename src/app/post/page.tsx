@@ -105,13 +105,11 @@ export default function PostPage() {
   const allValid = isAuthenticated
     ? form.shift_date &&
       form.location &&
-      (form.poster_phone?.trim() || "").length >= 10 &&
       validateEndAfterStart() &&
       !errors.shift_date &&
       !errors.start_time &&
       !errors.end_time &&
-      !errors.location &&
-      !errors.poster_phone
+      !errors.location
     : form.poster_name.trim() &&
       form.poster_email &&
       /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.poster_email) &&
@@ -133,7 +131,6 @@ export default function PostPage() {
             start_time: form.start_time,
             end_time: form.end_time,
             location: form.location,
-            ...(form.poster_phone?.trim() ? { poster_phone: form.poster_phone.trim() } : {}),
           }
         : {
             poster_name: form.poster_name.trim(),
@@ -370,38 +367,6 @@ export default function PostPage() {
             </p>
           )}
         </div>
-
-        {isAuthenticated && (
-          <div>
-            <label htmlFor="poster_phone_auth" className="block text-sm font-medium text-slate-700 mb-1">
-              Mobile Phone <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="poster_phone_auth"
-              name="poster_phone"
-              type="tel"
-              value={form.poster_phone}
-              onChange={(e) => setForm((p) => ({ ...p, poster_phone: e.target.value }))}
-              onBlur={(e) => {
-                const v = e.target.value.trim();
-                if (!v) setErrors((p) => ({ ...p, poster_phone: "Phone is required for SMS notifications" }));
-                else if (!/^[\d\s\-+()]{10,}$/.test(v)) setErrors((p) => ({ ...p, poster_phone: "Invalid phone format" }));
-                else setErrors((p) => ({ ...p, poster_phone: undefined }));
-              }}
-              placeholder="For SMS notifications"
-              className={`block w-full rounded-md border px-3 py-2 text-slate-900 shadow-sm focus:ring-2 focus:ring-blue-500 ${
-                errors.poster_phone ? "border-red-500" : "border-slate-300"
-              }`}
-            />
-            <p className="mt-1 text-xs text-slate-500">Required for SMS when your shift is covered.</p>
-            {errors.poster_phone && (
-              <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600">
-                <ErrorIcon className="flex-shrink-0 mt-0.5" />
-                {errors.poster_phone}
-              </p>
-            )}
-          </div>
-        )}
 
         {!isAuthenticated && (
           <>
