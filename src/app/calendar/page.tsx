@@ -46,18 +46,17 @@ function getCalendarDays(year: number, month: number) {
   return days;
 }
 
-// Pay-period: first gray block = March 8–21, then April 5–18, May 3–16, May 31–June 13, etc. (14-day blocks from March 8).
-// Use an unambiguous anchor (March 8 UTC) and 28-day cycle so position 0–13 = gray, 14–27 = white.
-const PAY_PERIOD_ANCHOR_MS = new Date("2000-03-08T00:00:00.000Z").getTime();
+// Pay period grayscale: anchor = Sunday March 8, 2025 (start of first pay period). 14-day periods repeat.
+// Gray when Math.floor(daysSinceAnchor / 14) % 2 === 0 (e.g. Mar 8–21, Apr 5–18). No hardcoded dates.
+const PAY_PERIOD_ANCHOR_MS = new Date("2025-03-08T00:00:00.000Z").getTime();
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-const DAYS_PER_CYCLE = 28;
 
-/** Returns true if the given calendar date (year, month 0-based, day) falls in a gray pay period (March 8–21, April 5–18, etc.). */
+/** Returns true if this calendar date falls in a "gray" pay period (Mar 8–21, Apr 5–18, etc.), computed from anchor. */
 function isPayPeriodGray(year: number, month: number, day: number): boolean {
-  const dayStartUTC = Date.UTC(year, month, day);
-  const daysSinceAnchor = (dayStartUTC - PAY_PERIOD_ANCHOR_MS) / MS_PER_DAY;
-  const positionInCycle = ((daysSinceAnchor % DAYS_PER_CYCLE) + DAYS_PER_CYCLE) % DAYS_PER_CYCLE;
-  return positionInCycle < 14;
+  const dayStartMs = Date.UTC(year, month, day);
+  const daysSinceAnchor = (dayStartMs - PAY_PERIOD_ANCHOR_MS) / MS_PER_DAY;
+  const periodIndex = Math.floor(daysSinceAnchor / 14);
+  return periodIndex % 2 === 0;
 }
 
 /** Returns the calendar date (year, month 0-based, day) displayed in the cell at cellIndex. */
@@ -344,7 +343,7 @@ export default function CalendarPage() {
               {calendarDays.map((d, i) => {
                 const ymd = getCellCalendarYMD(viewYear, viewMonth, i);
                 const isGray = ymd ? isPayPeriodGray(ymd.year, ymd.month, ymd.day) : false;
-                const payPeriodBg = isGray ? "bg-slate-200" : "bg-white";
+                const payPeriodBg = isGray ? "bg-gray-100" : "bg-white";
                 if (d === null)
                   return (
                     <div
@@ -380,6 +379,7 @@ export default function CalendarPage() {
                 );
               })}
             </div>
+            <p className="mt-2 text-xs text-slate-500">Gray = current pay period</p>
           </div>
 
           <section className="md:min-w-[280px] md:flex-1 md:border-l md:border-slate-200 md:pl-8 md:pt-0 mt-6 md:mt-0">
