@@ -31,7 +31,7 @@ The central table. One row per posted shift.
 | id            | UUID        | PK, DEFAULT gen_random_uuid() |                                          |
 | poster_name   | VARCHAR     | NOT NULL                 |                                               |
 | poster_email  | VARCHAR     | NOT NULL                 | Never exposed to the browser                  |
-| poster_phone  | VARCHAR     | NOT NULL when posting   | Required for SMS; when posted by user, from user.phone |
+| poster_phone  | VARCHAR     | NOT NULL when posting   | Required for SMS; when posted by user, from user.phone (do not collect on post form for logged-in users). |
 | location      | VARCHAR     | NOT NULL                 | Validated against the allowed locations list  |
 | role          | VARCHAR     | NOT NULL                 | Pharmacist, Technician, or Intern; validated against roles list |
 | shift_date    | DATE        | NOT NULL                 |                                               |
@@ -159,7 +159,7 @@ Use session-based auth (e.g. NextAuth.js with credentials or magic link, or Cler
 
 **Authentication required.** If the request is unauthenticated, return **401 Unauthorized**. Anonymous posting is removed or deprecated.
 
-**When authenticated:** poster_name, poster_email, and role (position) come from the session. Request body: shift_date, start_time, end_time, location. **poster_phone** is required for posting (for SMS): use `user.phone` from profile, or accept it in the body if not yet on profile. Set `posted_by_user_id` to current user. Optionally allow role override in body; otherwise use user.position.
+**When authenticated:** poster_name, poster_email, role (position), and poster_phone come from the session/user profile. Request body: shift_date, start_time, end_time, location only. Do not require or accept poster_phone in the body for authenticated users; use `user.phone` from the profile (collected at signup). Set `posted_by_user_id` to current user. Optionally allow role override in body; otherwise use user.position.
 
 Response (201):
 ```json
@@ -254,7 +254,7 @@ Enforced server-side via Zod schema before any database write:
 
 - `poster_name`: non-empty string
 - `poster_email`: valid email format, required
-- `poster_phone`: required when posting (for SMS); from user profile when posted by user; must match phone number pattern
+- `poster_phone`: required when posting (for SMS); for authenticated users, use user.phone from profile only (do not collect on post form); must match phone number pattern
 - `location`: must be one of the 10 allowed strings
 - `role`: must be one of the allowed role strings
 - `shift_date`: valid ISO date, must be today or in the future

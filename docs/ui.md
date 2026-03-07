@@ -93,9 +93,8 @@ Email + password (or magic link). POST /api/auth/login; on success redirect to `
 | Shift Start Time   | Time picker       | Yes      | Native time input. 15-min increments suggested.                                               |
 | Shift End Time     | Time picker       | Yes      | Must be after start time. Validation inline.                                                  |
 | Location           | Dropdown/select   | Yes      | Options: Red Pharmacy, CSC Pharmacy, Shapiro Pharmacy, Whittier Pharmacy, Enhanced Care, Speciality Pharmacy, Brooklyn Park Pharmacy, St. Anthony Pharmacy, Richfield Pharmacy, North Loop Pharmacy. |
-| Mobile Phone       | Tel input         | Yes      | From profile if present; otherwise one required field (for SMS notifications).                |
 
-Your name, email, and role (position) come from the session and are not shown or are read-only. Submit sends minimal body; server fills poster from session. **Phone** is required (from profile or one required field).
+When logged in, **do not show** a Mobile Phone field on the post form. The app uses the phone number from the user's account (collected at signup). Your name, email, role (position), and phone come from the session and are not shown or are read-only. Submit sends minimal body; server fills poster (including poster_phone from user.phone) from session.
 
 **Interactions:**
 
@@ -107,7 +106,7 @@ Your name, email, and role (position) come from the session and are not shown or
 **UX notes:**
 
 - Pre-populate location and role if the user has posted before (store in localStorage for MVP, tied to user account later).
-- Phone is required for posting (for SMS); when logged in, use profile phone or require one phone field on the form.
+- When logged in, do not show a phone field on the post form; the app uses the phone number from the user's account (collected at signup).
 
 ---
 
@@ -382,7 +381,7 @@ No formal design system is prescribed for MVP, but the following principles appl
 
 ### SMS Notifications
 
-- The phone field on the post form is already present but optional. When SMS is enabled, it becomes a toggleable notification preference rather than a simple input.
+- When logged in, the post form does not show a phone field; the app uses the phone number from the user's account (signup). SMS notifications on cover use that profile phone.
 
 ### Admin Dashboard
 

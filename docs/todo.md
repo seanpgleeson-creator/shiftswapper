@@ -64,7 +64,7 @@ Goal: Live site with navigation and placeholders so every route exists.
 
 ### Frontend
 
-- [x] `/post` page: form fields — Your Name, Shift Date (default tomorrow), Start Time, End Time, Location (dropdown), Title/Role (dropdown), Email, Mobile Phone (optional, labeled for future SMS)
+- [x] `/post` page: when authenticated, form fields — Shift Date (default tomorrow), Start Time, End Time, Location (dropdown); name, email, role, and phone from session (no phone field shown; app uses account phone from signup)
 - [x] Client validation on blur; end time &gt; start time; submit button disabled until valid
 - [x] Submit → `POST /api/shifts`; on success show confirmation card ("Your shift on [date] at [location] has been posted") with "Post Another" and "Browse Shifts"
 - [x] On server error: toast "Something went wrong"; keep form data
@@ -203,13 +203,13 @@ Goal: Live site with navigation and placeholders so every route exists.
 
 ### Backend
 
-- [x] Require **poster_phone** (user profile or shift payload) when posting.
+- [x] Require **poster_phone** when posting (for SMS); when authenticated, use user.phone from profile only (no phone field on post form).
 - [x] On cover: send **SMS** (e.g. to poster) with coverer name and prompt to send the shift officially in UKG. Twilio (or similar); env vars (e.g. TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER).
 - [x] Email behavior unchanged.
 
 ### Frontend
 
-- [x] Phone required in signup and in post flow (or from profile). No new UI for SMS beyond ensuring phone is collected.
+- [x] Phone required in signup (collected at account creation). When logged in, post form does not show phone; app uses account phone. No separate phone field on post form for authenticated users.
 
 **Verify in production:** Post shift with phone → another user covers → poster receives SMS with coverer name and UKG prompt.
 
