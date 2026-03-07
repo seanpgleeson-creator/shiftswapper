@@ -117,8 +117,12 @@ export async function POST(request: NextRequest) {
 
   const u = session.user as { id?: string; email?: string; name?: string; firstName?: string; lastName?: string; position?: string; phone?: string; role?: string };
   const isAdmin = u.role === "admin";
+  const bodyHasPosterDetails =
+    typeof body === "object" && body !== null && "poster_name" in body && typeof (body as Record<string, unknown>).poster_name === "string";
 
-  if (isAdmin) {
+  // Use admin schema only when posting on behalf of someone (full poster details in body).
+  // Otherwise authenticated users (including admins) post their own shift with the short form.
+  if (isAdmin && bodyHasPosterDetails) {
     const parsed = createShiftAdminSchema.safeParse(body);
     if (!parsed.success) {
       const fields = parsed.error.flatten().fieldErrors;
