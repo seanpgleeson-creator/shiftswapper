@@ -273,6 +273,8 @@ Goal: Live site with navigation and placeholders so every route exists.
 
 - [x] Correct pay-period grayscale so it follows the requested date pattern (March 8–21 = first gray block; alternating 14-day periods from that anchor).
 - [x] Verify anchor and 14-day boundaries using timezone-safe date math so gray bands align with March 8–21, March 22–April 4, etc.
+- [x] Use calendar-date-based period calculation: each cell’s displayed (year, month, day) is interpreted in UTC for the 14-day period, so bands are correct regardless of user timezone.
+- [x] Use a stronger gray (e.g. slate-200) for the pay-period block so bands are clearly visible vs white.
 - [ ] Re-verify in production: calendar shows gray bands on correct two-week chunks.
 
 **Verify in production:** Calendar shows gray bands on correct two-week chunks (March 8–21 gray, March 22–April 4 default, etc.).

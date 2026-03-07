@@ -114,7 +114,7 @@ GET /api/roles returns this list. It is used for the sign-up position dropdown a
 
 ### Pay periods (calendar display only)
 
-Pay periods are two-week blocks used only for calendar display so users can ensure they are swapping shifts within the same pay period. No API or database change: the calendar grid applies a light gray background to every other two-week chunk. The first gray block starts March 8 (e.g. March 8–21 = first pay period, March 22–April 4 = second, then alternating). The anchor is fixed (e.g. March 8 of a reference year) so the pattern extends indefinitely in both directions.
+Pay periods are two-week blocks used only for calendar display so users can ensure they are swapping shifts within the same pay period. No API or database change: the calendar grid applies a visible gray background (e.g. slate-200) to every other two-week chunk. The period for each cell is derived from that cell’s displayed calendar date (year/month/day) interpreted in UTC, so bands align correctly in all timezones. The first gray block starts March 8 (e.g. March 8–21 = first pay period, March 22–April 4 = second, then alternating). The anchor is fixed (e.g. March 8 of a reference year) so the pattern extends indefinitely in both directions.
 
 ---
 

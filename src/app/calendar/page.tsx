@@ -46,25 +46,23 @@ function getCalendarDays(year: number, month: number) {
   return days;
 }
 
-// Pay-period anchor: first gray block = March 8–21 (UTC); alternating 14-day periods. Timezone-safe.
+// Pay-period anchor: first gray block = March 8–21 (UTC); alternating 14-day periods. Use calendar date (YMD) in UTC.
 const PAY_PERIOD_ANCHOR_MS = Date.UTC(2000, 2, 8); // March 8, 2000 00:00 UTC
 const MS_PER_14_DAYS = 14 * 24 * 60 * 60 * 1000;
 
-function isPayPeriodGray(date: Date): boolean {
-  const dayStartUTC = Date.UTC(
-    date.getUTCFullYear(),
-    date.getUTCMonth(),
-    date.getUTCDate()
-  );
+/** Returns true if the given calendar date (year, month 0-based, day) falls in a gray pay period (March 8–21, April 5–18, etc.). */
+function isPayPeriodGray(year: number, month: number, day: number): boolean {
+  const dayStartUTC = Date.UTC(year, month, day);
   const periodIndex = Math.floor((dayStartUTC - PAY_PERIOD_ANCHOR_MS) / MS_PER_14_DAYS);
   return periodIndex % 2 === 0;
 }
 
-function getDateForCell(
+/** Returns the calendar date (year, month 0-based, day) displayed in the cell at cellIndex. */
+function getCellCalendarYMD(
   viewYear: number,
   viewMonth: number,
   cellIndex: number
-): Date | null {
+): { year: number; month: number; day: number } | null {
   const first = new Date(viewYear, viewMonth, 1);
   const startPad = first.getDay();
   const last = new Date(viewYear, viewMonth + 1, 0);
@@ -73,14 +71,14 @@ function getDateForCell(
     const prevLast = new Date(viewYear, viewMonth, 0);
     const prevDays = prevLast.getDate();
     const day = prevDays - (startPad - 1 - cellIndex);
-    return new Date(viewYear, viewMonth - 1, day);
+    return { year: viewYear, month: viewMonth - 1, day };
   }
   if (cellIndex < startPad + daysInMonth) {
     const day = cellIndex - startPad + 1;
-    return new Date(viewYear, viewMonth, day);
+    return { year: viewYear, month: viewMonth, day };
   }
   const day = cellIndex - startPad - daysInMonth + 1;
-  return new Date(viewYear, viewMonth + 1, day);
+  return { year: viewYear, month: viewMonth + 1, day };
 }
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -341,9 +339,9 @@ export default function CalendarPage() {
             </div>
             <div className="grid grid-cols-7 gap-1">
               {calendarDays.map((d, i) => {
-                const cellDate = getDateForCell(viewYear, viewMonth, i);
-                const isGray = cellDate ? isPayPeriodGray(cellDate) : false;
-                const payPeriodBg = isGray ? "bg-slate-100" : "bg-white";
+                const ymd = getCellCalendarYMD(viewYear, viewMonth, i);
+                const isGray = ymd ? isPayPeriodGray(ymd.year, ymd.month, ymd.day) : false;
+                const payPeriodBg = isGray ? "bg-slate-200" : "bg-white";
                 if (d === null)
                   return (
                     <div
