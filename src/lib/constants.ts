@@ -5,7 +5,7 @@ export const LOCATIONS = [
   "CSC Pharmacy",
   "Shapiro Pharmacy",
   "Whittier Pharmacy",
-  "Green Pharmacy",
+  "Enhanced Care",
   "Speciality Pharmacy",
   "Brooklyn Park Pharmacy",
   "St. Anthony Pharmacy",
@@ -13,7 +13,7 @@ export const LOCATIONS = [
   "North Loop Pharmacy",
 ] as const;
 
-export const ROLES = ["Pharmacist"] as const;
+export const ROLES = ["Pharmacist", "Technician", "Intern"] as const;
 
 export type Location = (typeof LOCATIONS)[number];
 export type Role = (typeof ROLES)[number];

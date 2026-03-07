@@ -46,6 +46,38 @@ function getCalendarDays(year: number, month: number) {
   return days;
 }
 
+// Pay-period anchor: first gray block = March 8–21; alternating 14-day periods after that.
+const PAY_PERIOD_ANCHOR_MS = new Date(2000, 2, 8).getTime();
+const MS_PER_14_DAYS = 14 * 24 * 60 * 60 * 1000;
+
+function isPayPeriodGray(date: Date): boolean {
+  const periodIndex = Math.floor((date.getTime() - PAY_PERIOD_ANCHOR_MS) / MS_PER_14_DAYS);
+  return periodIndex % 2 === 0;
+}
+
+function getDateForCell(
+  viewYear: number,
+  viewMonth: number,
+  cellIndex: number
+): Date | null {
+  const first = new Date(viewYear, viewMonth, 1);
+  const startPad = first.getDay();
+  const last = new Date(viewYear, viewMonth + 1, 0);
+  const daysInMonth = last.getDate();
+  if (cellIndex < startPad) {
+    const prevLast = new Date(viewYear, viewMonth, 0);
+    const prevDays = prevLast.getDate();
+    const day = prevDays - (startPad - 1 - cellIndex);
+    return new Date(viewYear, viewMonth - 1, day);
+  }
+  if (cellIndex < startPad + daysInMonth) {
+    const day = cellIndex - startPad + 1;
+    return new Date(viewYear, viewMonth, day);
+  }
+  const day = cellIndex - startPad - daysInMonth + 1;
+  return new Date(viewYear, viewMonth + 1, day);
+}
+
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default function CalendarPage() {
@@ -304,8 +336,16 @@ export default function CalendarPage() {
             </div>
             <div className="grid grid-cols-7 gap-1">
               {calendarDays.map((d, i) => {
+                const cellDate = getDateForCell(viewYear, viewMonth, i);
+                const isGray = cellDate ? isPayPeriodGray(cellDate) : false;
+                const payPeriodBg = isGray ? "bg-slate-100" : "bg-white";
                 if (d === null)
-                  return <div key={`empty-${i}`} className="aspect-square" />;
+                  return (
+                    <div
+                      key={`empty-${i}`}
+                      className={`aspect-square ${payPeriodBg} rounded-md`}
+                    />
+                  );
                 const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
                 const dayShifts = shiftsByDay[dateStr] ?? [];
                 const isSelected = selectedDay === dateStr;
@@ -318,10 +358,10 @@ export default function CalendarPage() {
                     key={dateStr}
                     type="button"
                     onClick={() => setSelectedDay(dateStr)}
-                    className={`aspect-square min-w-[44px] rounded-md border text-sm ${
+                    className={`aspect-square min-w-[44px] rounded-md border text-sm ${payPeriodBg} ${
                       isSelected
                         ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500"
-                        : "border-slate-200 bg-white hover:bg-slate-50"
+                        : "border-slate-200 hover:bg-slate-50"
                     } ${isToday ? "font-semibold text-blue-600" : "text-slate-800"}`}
                   >
                     <span>{d}</span>

@@ -38,6 +38,8 @@ Goal: A deployable Next.js app with a database and a working "test in production
 
 Goal: Live site with navigation and placeholders so every route exists.
 
+### Pages and layout
+
 - [x] NavBar: Home, Post a Shift, Browse Shifts (routes: `/`, `/post`, `/calendar`)
 - [x] Footer: link to Upcoming Features (`/upcoming-features`)
 - [x] Landing page (`/`): hero tagline + two action cards (Post a Shift → `/post`, Browse Shifts → `/calendar`)
@@ -137,6 +139,12 @@ Goal: Live site with navigation and placeholders so every route exists.
 
 ## Feature 5: Upcoming Features and Polish
 
+### Backend
+
+- No backend tasks (content and polish only).
+
+### Frontend
+
 - [x] `/upcoming-features` page: list with short descriptions — User Accounts, Remove Posted Shift (poster can remove/cancel their shift; requires sign-in), Role and Location Restrictions, SMS/Text Notifications, Shift History, Admin Dashboard
 - [x] Optional: "Request a Feature" (mailto or form)
 - [x] Footer and/or landing link to Upcoming Features (if not already)
@@ -209,6 +217,8 @@ Goal: Live site with navigation and placeholders so every route exists.
 
 ## Polish: Nav and branding (post–6c)
 
+### Frontend
+
 - [x] **Logo:** Replace nav “ShiftSwapper” text with logo image (`public/shift-swapper-logo.svg`); logo height `h-12`.
 - [x] **Nav uniformity and mobile:** All nav links use same text size and weight (text-sm, font-medium); Sign up button uses consistent tap target (min-h 44px) and padding; nav wraps cleanly on small screens with appropriate gaps.
 
@@ -249,7 +259,7 @@ Goal: Live site with navigation and placeholders so every route exists.
 
 ---
 
-## Feature: Pay-period indication on calendar
+## Feature 9: Pay-period indication on calendar
 
 ### Backend
 
@@ -257,41 +267,41 @@ Goal: Live site with navigation and placeholders so every route exists.
 
 ### Frontend
 
-- [ ] Calendar month grid applies alternating two-week background (light gray vs default); first gray block = March 8–21; pattern continues from that anchor indefinitely.
+- [x] Calendar month grid applies alternating two-week background (light gray vs default); first gray block = March 8–21; pattern continues from that anchor indefinitely.
 
 **Verify in production:** Calendar shows gray bands on correct two-week chunks (March 8–21 gray, March 22–April 4 default, etc.).
 
 ---
 
-## Feature: Rename Green Pharmacy to Enhanced Care
+## Feature 10: Rename Green Pharmacy to Enhanced Care
 
 ### Backend
 
-- [ ] Update locations constant (and any seeds/docs that list locations): "Green Pharmacy" → "Enhanced Care".
+- [x] Update locations constant (and any seeds/docs that list locations): "Green Pharmacy" → "Enhanced Care".
 
 ### Frontend
 
-- [ ] All location dropdowns and filters use "Enhanced Care" instead of "Green Pharmacy" (locations come from API).
+- [x] All location dropdowns and filters use "Enhanced Care" instead of "Green Pharmacy" (locations come from API).
 
 **Verify in production:** Post, browse, and admin show "Enhanced Care"; no "Green Pharmacy" in UI.
 
 ---
 
-## Feature: Add Technician and Intern roles
+## Feature 11: Add Technician and Intern roles
 
 ### Backend
 
-- [ ] Add "Technician" and "Intern" to roles constant; GET /api/roles returns Pharmacist, Technician, Intern; validation accepts all three for shift role and user position.
+- [x] Add "Technician" and "Intern" to roles constant; GET /api/roles returns Pharmacist, Technician, Intern; validation accepts all three for shift role and user position.
 
 ### Frontend
 
-- [ ] Signup and post position/role dropdowns include Technician and Intern; calendar role filter includes them.
+- [x] Signup and post position/role dropdowns include Technician and Intern; calendar role filter includes them.
 
 **Verify in production:** Can sign up and post as Technician or Intern; calendar filters by role.
 
 ---
 
-## Feature: Coverer name and phone in SMS to poster
+## Feature 12: Coverer name and phone in SMS to poster
 
 ### Backend
 
@@ -320,5 +330,9 @@ Goal: Live site with navigation and placeholders so every route exists.
 | **Feature 6c: SMS**              | poster_phone + Twilio on cover \| Phone in signup/post |
 | **Feature 7: Admin**             | Admin shifts API \| Admin UI (all shifts, add, remove) |
 | **Feature 8: Calendar sync**      | GET /api/me/calendar \| Copy feed URL + instructions |
+| **Feature 9: Pay-period indication** | Display only (calendar grid styling) |
+| **Feature 10: Rename Green Pharmacy** | Backend (locations constant) \| Frontend (dropdowns/filters) |
+| **Feature 11: Technician and Intern roles** | Backend (roles constant) \| Frontend (signup, post, filters) |
+| **Feature 12: Coverer name and phone in SMS** | Backend (coverer_phone, SMS payload) \| Frontend (no change) |
 
 Sequence remains feature-driven: finish each feature end-to-end and verify in production before moving to the next.
