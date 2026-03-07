@@ -71,9 +71,11 @@ Stores signed-up team members and admins. Used for authentication and to pre-fil
 | email      | VARCHAR     | UNIQUE, NOT NULL         | Login identifier                                 |
 | phone      | VARCHAR     | NOT NULL                 | Required for signup (SMS notifications)          |
 | position   | VARCHAR     | NOT NULL                 | e.g. "Pharmacist"; validated against roles list  |
-| role       | VARCHAR     | NOT NULL, DEFAULT 'member' | 'member' or 'admin'                          |
-| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT now()  |                                                  |
-| updated_at | TIMESTAMPTZ | NOT NULL                 |                                                  |
+| role           | VARCHAR     | NOT NULL, DEFAULT 'member' | 'member' or 'admin'                          |
+| sms_consent    | BOOLEAN     | NOT NULL, DEFAULT false   | User has agreed to receive SMS for shift swap updates. |
+| sms_consent_at | TIMESTAMPTZ | NULL                      | Set when sms_consent was set to true (at signup or later). |
+| created_at     | TIMESTAMPTZ | NOT NULL, DEFAULT now()  |                                                  |
+| updated_at     | TIMESTAMPTZ | NOT NULL                 |                                                  |
 
 Calendar filtering for members is by `position` only: a member sees only shifts where `shift.role` = user's `position`. When `posted_by_user_id` is set on a shift, poster name/email/phone can be stored as a snapshot at post time (so historical shifts stay correct if the user later changes profile) or derived from the user record at read time; document the choice in implementation.
 
@@ -136,10 +138,10 @@ Use session-based auth (e.g. NextAuth.js with credentials or magic link, or Cler
 
 | Method | Path                 | Auth Required | Description                                                                 |
 |--------|----------------------|---------------|-----------------------------------------------------------------------------|
-| POST   | /api/auth/signup     | No            | Body: first_name, last_name, email, password (or magic link), position, **phone (required, for SMS)**. Create user with role 'member'. On success: send notification email to admin. Return session or redirect. |
+| POST   | /api/auth/signup     | No            | Body: first_name, last_name, email, password (or magic link), position, **phone (required, for SMS)**, **sms_consent (required, must be true)**. Create user with role 'member'; store sms_consent and set sms_consent_at to now when sms_consent is true. On success: send notification email to admin. Return session or redirect. |
 | POST   | /api/auth/login      | No            | Credentials or magic link; establish session.                               |
 | POST   | /api/auth/logout     | No            | Clear session.                                                              |
-| GET    | /api/auth/session or /api/me | Session  | Return current user (id, first_name, last_name, email, position, phone, role). 401 if unauthenticated. |
+| GET    | /api/auth/session or /api/me | Session  | Return current user (id, first_name, last_name, email, position, phone, role, sms_consent, sms_consent_at). 401 if unauthenticated. |
 
 ### 5.3 Shifts
 
@@ -321,7 +323,8 @@ Both emails (and SMS when implemented) are sent immediately after a successful c
 
 ### SMS on cover
 
-- **To:** poster (e.g. `poster_phone` from the shift record).
+- **Consent:** Only send SMS to the poster when the shift has `posted_by_user_id` and the corresponding user has `sms_consent === true`. Do not send SMS for posters who have not opted in or when the poster is not linked to a user (e.g. no `posted_by_user_id`).
+- **To:** poster (e.g. `poster_phone` from the shift record), subject to consent above.
 - **Content:** Include the **coverer name** and **coverer phone number**, plus a **prompt to send the shift officially in UKG** (e.g. "Send this shift officially in UKG to complete the swap."). Shift Swapper is separate from UKG; manual transfer is required. `coverer_phone` is stored on the shift at cover time (from session when authenticated) and passed into the SMS payload.
 - **Implementation:** Use Twilio (or similar) API. Document env vars: e.g. `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` (or equivalent). SMS is additive; email behavior is unchanged. If SMS send fails, log and do not roll back the cover.
 - **Twilio trial:** Trial accounts can only send SMS to verified caller IDs. In Twilio Console → Phone Numbers → Manage → Verified Caller IDs, add the poster’s number (and any test numbers). Production accounts do not have this restriction.

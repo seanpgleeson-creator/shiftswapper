@@ -63,7 +63,9 @@ The landing page loads instantly. When auth is implemented, unauthenticated user
 
 **Purpose:** Let a new team member create an account.
 
-**Form fields:** First name, Last name, Email, Position (single dropdown — list from GET /api/roles: Pharmacist, Technician, Intern), **Phone (required, for SMS)**.  Password (or "Send magic link" if using magic-link auth). Submit → POST /api/auth/signup; on success redirect to `/` or `/calendar` and establish session.
+**Form fields:** First name, Last name, Email, Position (single dropdown — list from GET /api/roles: Pharmacist, Technician, Intern), **Phone (required, for SMS)**.  Password (or "Send magic link" if using magic-link auth). **SMS opt-in checkbox (required):** Unchecked by default; label: "I agree to receive SMS notifications for shift swap updates. Message & data rates may apply. Reply STOP to opt out." User cannot submit until the checkbox is checked. Submit → POST /api/auth/signup (body includes `sms_consent: true`); on success redirect to `/` or `/calendar` and establish session.
+
+**Consent:** Consent is stored with the user profile (`sms_consent`, `sms_consent_at`). SMS notifications (e.g. when a shift is covered) are only sent to users who have opted in.
 
 **UX note:** After signup, the admin receives an email with the new user's first name, last name, email, and position so they can validate the user is an employee.
 
@@ -115,7 +117,7 @@ Your name, email, and role (position) come from the session and are not shown or
 
 **Layout:**
 
-- **Month calendar grid** -- standard 7-column grid. Days with available shifts show a badge/dot indicator with the count of open shifts. **Pay-period banding:** Apply a light gray background to every other two-week block so users can see pay periods and swap within the same period. Pattern: first gray block = March 8–21, then default March 22–April 4, then gray April 5–18, etc., from a fixed March 8 anchor continuing indefinitely.
+- **Month calendar grid** -- standard 7-column grid. Days with available shifts show a badge/dot indicator with the count of open shifts. **Pay-period banding:** Apply a light gray background to every other two-week block so users can see pay periods and swap within the same period. Pattern: first gray block = March 8–21, then default March 22–April 4, then gray April 5–18, etc., from a fixed March 8 anchor continuing indefinitely. Implementation should use timezone-safe date math so bands align correctly with the anchor.
 - **Navigation** -- left/right arrows to move between months. A "Today" button to jump back.
 - **Filter bar** (above or beside the calendar):
   - Location filter — multi-select checkboxes or pill toggles for the 10 pharmacy locations. Default: all selected.
