@@ -106,6 +106,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Normalize legacy location name so validation passes (client may send old name if cached).
+  if (typeof body === "object" && body !== null && "location" in body && (body as { location?: string }).location === "Green Pharmacy") {
+    (body as { location: string }).location = "Enhanced Care";
+  }
+
   const u = session.user as { id?: string; email?: string; name?: string; firstName?: string; lastName?: string; position?: string; phone?: string; role?: string };
   const isAdmin = u.role === "admin";
 
@@ -115,7 +120,7 @@ export async function POST(request: NextRequest) {
       const fields = parsed.error.flatten().fieldErrors;
       const fieldList = Object.entries(fields).map(([field, messages]) => ({
         field,
-        message: Array.isArray(messages) ? messages[0] : messages,
+        message: (Array.isArray(messages) ? messages[0] : messages) ?? "Invalid value",
       }));
       return NextResponse.json(
         { error: "Validation failed", code: "VALIDATION_ERROR", fields: fieldList },
@@ -167,7 +172,7 @@ export async function POST(request: NextRequest) {
     const fields = parsed.error.flatten().fieldErrors;
     const fieldList = Object.entries(fields).map(([field, messages]) => ({
       field,
-      message: Array.isArray(messages) ? messages[0] : messages,
+      message: (Array.isArray(messages) ? messages[0] : messages) ?? "Invalid value",
     }));
     return NextResponse.json(
       {
