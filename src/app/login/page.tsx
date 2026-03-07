@@ -17,6 +17,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const signup = searchParams.get("signup");
+  const nextUrl = searchParams.get("next") || "/";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -37,7 +38,7 @@ function LoginForm() {
         return;
       }
       if (result?.ok) {
-        router.push("/");
+        router.push(nextUrl.startsWith("/") ? nextUrl : "/");
         router.refresh();
       }
     } catch {

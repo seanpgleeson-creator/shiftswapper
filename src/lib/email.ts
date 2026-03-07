@@ -91,6 +91,30 @@ A shift has been picked up via ShiftSwapper. Please update the schedule.
   return { posterOk, schedulerOk, error: lastError };
 }
 
+/** Send verification email with link. verifyUrl should point to /api/auth/verify-email?token=... */
+export async function sendVerificationEmail(
+  to: string,
+  verifyUrl: string
+): Promise<{ ok: boolean; error?: string }> {
+  if (!resend) {
+    console.warn("RESEND_API_KEY not set; skipping verification email");
+    return { ok: false, error: "Email not configured" };
+  }
+  try {
+    const res = await resend.emails.send({
+      from: fromEmail,
+      to,
+      subject: "Verify your email — ShiftSwapper",
+      text: `Please verify your email by clicking this link:\n\n${verifyUrl}\n\nIf you didn't create an account, you can ignore this email.\n\n— ShiftSwapper`,
+    });
+    return { ok: res.data != null, error: res.error?.message };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Failed to send verification email";
+    console.error("Verification email send failed:", e);
+    return { ok: false, error: message };
+  }
+}
+
 export async function sendSignupNotificationToAdmin(
   adminEmail: string,
   user: { firstName: string; lastName: string; email: string; position: string }

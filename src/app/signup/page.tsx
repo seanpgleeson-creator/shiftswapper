@@ -78,7 +78,7 @@ export default function SignupPage() {
         redirect: false,
       });
       if (signInResult?.ok) {
-        router.push("/");
+        router.push("/check-email");
         router.refresh();
         return;
       }

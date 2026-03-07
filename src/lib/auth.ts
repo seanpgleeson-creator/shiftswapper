@@ -30,6 +30,8 @@ export const authOptions: NextAuthOptions = {
           role: user.role,
           smsConsent: user.smsConsent,
           smsConsentAt: user.smsConsentAt?.toISOString() ?? undefined,
+          emailVerified: user.emailVerified,
+          phoneVerified: user.phoneVerified,
         };
       },
     }),
@@ -45,6 +47,8 @@ export const authOptions: NextAuthOptions = {
         token.role = (user as { role?: string }).role;
         token.smsConsent = (user as { smsConsent?: boolean }).smsConsent;
         token.smsConsentAt = (user as { smsConsentAt?: string }).smsConsentAt;
+        token.emailVerified = (user as { emailVerified?: boolean }).emailVerified;
+        token.phoneVerified = (user as { phoneVerified?: boolean }).phoneVerified;
       }
       return token;
     },
@@ -58,6 +62,8 @@ export const authOptions: NextAuthOptions = {
         (session.user as { role?: string }).role = token.role as string;
         (session.user as { smsConsent?: boolean }).smsConsent = token.smsConsent as boolean | undefined;
         (session.user as { smsConsentAt?: string }).smsConsentAt = token.smsConsentAt as string | undefined;
+        (session.user as { emailVerified?: boolean }).emailVerified = token.emailVerified as boolean | undefined;
+        (session.user as { phoneVerified?: boolean }).phoneVerified = token.phoneVerified as boolean | undefined;
       }
       return session;
     },

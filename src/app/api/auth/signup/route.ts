@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hash } from "bcryptjs";
+import { randomBytes } from "crypto";
 import { prisma } from "@/lib/db";
 import { signupSchema } from "@/lib/validation";
-import { sendSignupNotificationToAdmin } from "@/lib/email";
+import { sendSignupNotificationToAdmin, sendVerificationEmail } from "@/lib/email";
 
 export async function POST(request: NextRequest) {
   let body: unknown;
@@ -45,6 +46,8 @@ export async function POST(request: NextRequest) {
 
   const passwordHash = await hash(data.password, 12);
   const now = new Date();
+  const emailVerificationToken = randomBytes(32).toString("hex");
+  const emailVerificationExpiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24h
   const user = await prisma.user.create({
     data: {
       firstName: data.first_name.trim(),
@@ -56,8 +59,23 @@ export async function POST(request: NextRequest) {
       role: "member",
       smsConsent: data.sms_consent === true,
       smsConsentAt: data.sms_consent === true ? now : null,
+      emailVerified: false,
+      phoneVerified: false,
+      emailVerificationToken,
+      emailVerificationExpiresAt,
     },
   });
+
+  const baseUrl = process.env.NEXTAUTH_URL ?? "";
+  const verifyUrl = baseUrl
+    ? `${baseUrl.replace(/\/$/, "")}/api/auth/verify-email?token=${encodeURIComponent(emailVerificationToken)}`
+    : "";
+  if (verifyUrl) {
+    const sent = await sendVerificationEmail(user.email, verifyUrl);
+    if (!sent.ok) console.error("Verification email failed:", sent.error);
+  } else {
+    console.warn("NEXTAUTH_URL not set; verification email link not sent");
+  }
 
   const settings = await prisma.settings.findFirst();
   const schedulerEmail = settings?.schedulerEmail ?? "";
@@ -83,8 +101,10 @@ export async function POST(request: NextRequest) {
         role: user.role,
         sms_consent: user.smsConsent,
         sms_consent_at: user.smsConsentAt?.toISOString() ?? null,
+        email_verified: user.emailVerified,
+        phone_verified: user.phoneVerified,
       },
-      message: "Account created. Please sign in.",
+      message: "Account created. Check your email to verify, then sign in.",
     },
     { status: 201 }
   );

@@ -87,6 +87,7 @@ export async function PATCH(
   const posterConsented =
     shift.postedByUserId &&
     shift.postedByUser?.smsConsent === true &&
+    shift.postedByUser?.phoneVerified === true &&
     (shift.posterPhone?.trim() ?? "").length > 0;
   if (posterConsented) {
     const smsResult = await sendCoverSms({

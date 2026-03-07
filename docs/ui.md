@@ -18,6 +18,7 @@ This document covers the site map, page-by-page breakdown, component inventory, 
 /upcoming-features        Info page describing roadmap
 /login                    Log in (email + password or magic link)
 /signup                   Sign up (first name, last name, email, position, phone)
+/verify-phone             Enter 6-digit code sent to your phone (post-signup)
 /account                  User account (profile, calendar sync); when logged in
 /admin                    Admin area (all shifts, add/remove); when user.role === 'admin'
 /settings (future)        Admin/scheduler settings
@@ -63,11 +64,27 @@ The landing page loads instantly. When auth is implemented, unauthenticated user
 
 **Purpose:** Let a new team member create an account.
 
-**Form fields:** First name, Last name, Email, Position (single dropdown — list from GET /api/roles: Pharmacist, Technician, Intern), **Phone (required, for SMS)**.  Password (or "Send magic link" if using magic-link auth). **SMS opt-in checkbox (required):** Unchecked by default; label: "I agree to receive SMS notifications for shift swap updates. Message & data rates may apply. Reply STOP to opt out." User cannot submit until the checkbox is checked. Submit → POST /api/auth/signup (body includes `sms_consent: true`); on success redirect to `/` or `/calendar` and establish session.
+**Form fields:** First name, Last name, Email, Position (single dropdown — list from GET /api/roles: Pharmacist, Technician, Intern), **Phone (required, for SMS)**. Password (or "Send magic link" if using magic-link auth). **SMS opt-in checkbox (required):** Unchecked by default; label: "I agree to receive SMS notifications for shift swap updates. Message & data rates may apply. Reply STOP to opt out." User cannot submit until the checkbox is checked. Submit → POST /api/auth/signup (body includes `sms_consent: true`).
 
-**Consent:** Consent is stored with the user profile (`sms_consent`, `sms_consent_at`). SMS notifications (e.g. when a shift is covered) are only sent to users who have opted in.
+**After submit:** On success, the user is created but **not** yet fully verified. Show "Check your email" and explain they must click the verification link. A verification email is sent via Resend (or app email provider) with a link; clicking the link verifies the email. After they verify email (or when they next open the app with session), direct them to **phone verification** (see Verify phone below).
+
+**Consent:** Consent is stored with the user profile (`sms_consent`, `sms_consent_at`). SMS notifications (e.g. when a shift is covered) are only sent to users who have opted in and have verified their phone.
 
 **UX note:** After signup, the admin receives an email with the new user's first name, last name, email, and position so they can validate the user is an employee.
+
+### Verify email
+
+After signup, the user sees a "Check your email" screen with instructions to click the link in the verification email. When they click the link (verify-email endpoint), they are redirected to login or to the phone verification step.
+
+### Verify phone (`/verify-phone`)
+
+**Purpose:** Collect the 6-digit code sent by SMS so the user can access the app.
+
+**When shown:** User is logged in (or has session) but `phone_verified === false` (and after `email_verified === true`). Redirect from protected routes or after login until phone is verified.
+
+**UI:** Simple screen: short instruction ("We sent a 6-digit code to your phone. Enter it below."), single input (6 digits), "Verify" button, optional "Resend code" that calls send-phone-code. On success → server sets `phone_verified`; redirect to `/` or `/calendar`.
+
+**Access gate:** The app checks `email_verified` and `phone_verified` (e.g. in middleware or layout). If `email_verified` is false → show "Verify your email" / "Check your email" and block app access. If `phone_verified` is false (and email is verified) → show `/verify-phone` and block full access until the code is verified.
 
 ---
 
@@ -83,7 +100,7 @@ Email + password (or magic link). POST /api/auth/login; on success redirect to `
 
 **Purpose:** Let a team member publish a shift for others to pick up.
 
-**Posting requires login.** If the user is not logged in, redirect to login or show a clear message: "Sign in to post a shift" (with link to `/login` or `/signup`). Do not offer an anonymous post form.
+**Posting requires login.** If the user is not logged in, redirect to login or show a clear message: "Sign in to post a shift" (with link to `/login` or `/signup`). Do not offer an anonymous post form. **Access also requires full verification:** the user must have both `email_verified` and `phone_verified` true (see Verify email and Verify phone). If not fully verified, redirect to the appropriate verification step instead of showing the post form.
 
 **When authenticated** — form fields (top to bottom):
 
@@ -112,7 +129,7 @@ When logged in, **do not show** a Mobile Phone field on the post form. The app u
 
 ### 3.5 Browse Shifts -- Calendar View (`/calendar`)
 
-**Purpose:** Let a team member scan available shifts by date and claim one.
+**Purpose:** Let a team member scan available shifts by date and claim one. **Access requires login and full verification** (both `email_verified` and `phone_verified` true); if not, redirect to login or the appropriate verification step.
 
 **Layout:**
 

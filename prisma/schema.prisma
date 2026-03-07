@@ -21,6 +21,12 @@ model User {
   role          String    @default("member") // member | admin
   smsConsent    Boolean   @default(false) @map("sms_consent")
   smsConsentAt  DateTime? @map("sms_consent_at")
+  emailVerified Boolean   @default(false) @map("email_verified")
+  phoneVerified Boolean   @default(false) @map("phone_verified")
+  emailVerificationToken   String?   @map("email_verification_token")
+  emailVerificationExpiresAt DateTime? @map("email_verification_expires_at")
+  phoneVerificationCode    String?   @map("phone_verification_code")
+  phoneVerificationExpiresAt DateTime? @map("phone_verification_expires_at")
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 

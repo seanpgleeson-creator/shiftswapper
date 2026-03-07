@@ -54,3 +54,37 @@ export async function sendCoverSms(
     return { ok: false, error: message };
   }
 }
+
+/**
+ * Send 6-digit verification code via SMS (e.g. for phone verification at signup).
+ * If Twilio is not configured, skips send and returns { ok: false, error }.
+ */
+export async function sendPhoneVerificationCode(
+  phone: string,
+  code: string
+): Promise<{ ok: boolean; error?: string }> {
+  if (!client || !fromNumber) {
+    const msg = "Twilio not configured; skipping verification SMS";
+    console.warn("[VerifySMS]", msg);
+    return { ok: false, error: "SMS not configured" };
+  }
+  const to = phone.trim();
+  if (!to) {
+    return { ok: false, error: "No phone number" };
+  }
+  const toE164 = to.includes("+") ? to : `+1${to.replace(/\D/g, "")}`;
+  const body = `Your ShiftSwapper verification code is: ${code}. It expires in 10 minutes.`;
+  try {
+    await client.messages.create({
+      body,
+      from: fromNumber,
+      to: toE164,
+    });
+    console.info("[VerifySMS] Sent code to", toE164);
+    return { ok: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[VerifySMS] Twilio error:", message);
+    return { ok: false, error: message };
+  }
+}

@@ -326,6 +326,26 @@ Goal: Live site with navigation and placeholders so every route exists.
 
 ---
 
+## Feature 14: Email and phone verification at signup
+
+### Backend
+
+- [x] Add `email_verified` (boolean, NOT NULL, default false) and `phone_verified` (boolean, NOT NULL, default false) to the users table (Prisma migration). Optionally store `email_verification_token` and `email_verification_expires_at` for the link, or document the chosen approach.
+- [x] **Email:** On signup, send a verification email (Resend) with a link; link hits a verify endpoint that sets `email_verified = true`. User cannot access the app until `email_verified` is true (or document: signup response instructs "check your email" and app gates on email_verified).
+- [x] **Phone:** After signup (and after email is verified), when user first hits the app or a dedicated step: send 6-digit verification code via Twilio to the user's phone; expose endpoint to request code (e.g. POST /api/auth/send-phone-code) and to verify code (e.g. POST /api/auth/verify-phone). On success set `phone_verified = true`. Store code (and expiry) in DB or in-memory/cache; document choice.
+- [x] **Session/GET /api/me:** Include `email_verified` and `phone_verified` in session and in GET /api/me.
+- [x] **SMS on cover:** Only send SMS to the poster when the user has `sms_consent === true` **and** `phone_verified === true` (in addition to existing checks).
+
+### Frontend
+
+- [x] After signup success, redirect to a "Verify your email" state (e.g. "Check your email" page or wait for verification); then redirect to phone verification step.
+- [x] **Phone verification:** Show a simple code entry screen (e.g. /verify-phone) where the user enters the 6-digit code received by SMS. Submit calls verify-phone API; on success set `phone_verified` and allow full app access.
+- [x] **Access gate:** If the user is logged in but `email_verified` is false, show "Verify your email" and block access to /post, /calendar, etc. If `phone_verified` is false (and email is verified), show the code entry screen and block full access until verified.
+
+**Verify in production:** Sign up → receive email link → click to verify email → receive SMS code → enter code on verify-phone screen → access app; when a poster has not verified phone, they do not receive SMS on cover.
+
+---
+
 ## Parallel Work Summary
 
 | Phase / Feature | Can run in parallel |
@@ -345,5 +365,6 @@ Goal: Live site with navigation and placeholders so every route exists.
 | **Feature 11: Technician and Intern roles** | Backend (roles constant) \| Frontend (signup, post, filters) |
 | **Feature 12: Coverer name and phone in SMS** | Backend (coverer_phone, SMS payload) \| Frontend (no change) |
 | **Feature 13: SMS opt-in on signup** | Backend (users columns, signup validation, cover SMS gate) \| Frontend (checkbox, required) |
+| **Feature 14: Email and phone verification** | Backend (email/phone verify endpoints, DB columns) \| Frontend (verify-email state, verify-phone screen, access gate) |
 
 Sequence remains feature-driven: finish each feature end-to-end and verify in production before moving to the next.
