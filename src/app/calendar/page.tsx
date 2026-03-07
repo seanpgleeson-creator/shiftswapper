@@ -46,16 +46,14 @@ function getCalendarDays(year: number, month: number) {
   return days;
 }
 
-// Pay period grayscale: anchor = Sunday March 8, 2025 (start of first pay period). 14-day periods repeat.
-// Gray when Math.floor(daysSinceAnchor / 14) % 2 === 0 (e.g. Mar 8–21, Apr 5–18). No hardcoded dates.
-const PAY_PERIOD_ANCHOR_MS = new Date("2025-03-08T00:00:00.000Z").getTime();
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
-/** Returns true if this calendar date falls in a "gray" pay period (Mar 8–21, Apr 5–18, etc.), computed from anchor. */
-function isPayPeriodGray(year: number, month: number, day: number): boolean {
-  const dayStartMs = Date.UTC(year, month, day);
-  const daysSinceAnchor = (dayStartMs - PAY_PERIOD_ANCHOR_MS) / MS_PER_DAY;
-  const periodIndex = Math.floor(daysSinceAnchor / 14);
+// Pay period shading: visual boundary only (gray/white alternate by 14-day period from anchor). Not "current" period.
+function isGrayPeriod(date: Date): boolean {
+  const anchor = new Date(2025, 2, 8); // March 8, 2025 — Sunday — hardcoded anchor
+  anchor.setHours(0, 0, 0, 0);
+  const target = new Date(date);
+  target.setHours(0, 0, 0, 0);
+  const daysDiff = Math.floor((target.getTime() - anchor.getTime()) / (1000 * 60 * 60 * 24));
+  const periodIndex = Math.floor(daysDiff / 14);
   return periodIndex % 2 === 0;
 }
 
@@ -342,7 +340,7 @@ export default function CalendarPage() {
             <div className="grid grid-cols-7 gap-1">
               {calendarDays.map((d, i) => {
                 const ymd = getCellCalendarYMD(viewYear, viewMonth, i);
-                const isGray = ymd ? isPayPeriodGray(ymd.year, ymd.month, ymd.day) : false;
+                const isGray = ymd ? isGrayPeriod(new Date(ymd.year, ymd.month, ymd.day)) : false;
                 const payPeriodBg = isGray ? "bg-gray-100" : "bg-white";
                 if (d === null)
                   return (
@@ -379,7 +377,7 @@ export default function CalendarPage() {
                 );
               })}
             </div>
-            <p className="mt-2 text-xs text-slate-500">Gray = current pay period</p>
+            <p className="mt-2 text-xs text-slate-500">Shading indicates pay period boundaries</p>
           </div>
 
           <section className="md:min-w-[280px] md:flex-1 md:border-l md:border-slate-200 md:pl-8 md:pt-0 mt-6 md:mt-0">
