@@ -46,15 +46,18 @@ function getCalendarDays(year: number, month: number) {
   return days;
 }
 
-// Pay-period anchor: first gray block = March 8–21 (UTC); alternating 14-day periods. Use calendar date (YMD) in UTC.
-const PAY_PERIOD_ANCHOR_MS = Date.UTC(2000, 2, 8); // March 8, 2000 00:00 UTC
-const MS_PER_14_DAYS = 14 * 24 * 60 * 60 * 1000;
+// Pay-period: first gray block = March 8–21, then April 5–18, May 3–16, May 31–June 13, etc. (14-day blocks from March 8).
+// Use an unambiguous anchor (March 8 UTC) and 28-day cycle so position 0–13 = gray, 14–27 = white.
+const PAY_PERIOD_ANCHOR_MS = new Date("2000-03-08T00:00:00.000Z").getTime();
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const DAYS_PER_CYCLE = 28;
 
 /** Returns true if the given calendar date (year, month 0-based, day) falls in a gray pay period (March 8–21, April 5–18, etc.). */
 function isPayPeriodGray(year: number, month: number, day: number): boolean {
   const dayStartUTC = Date.UTC(year, month, day);
-  const periodIndex = Math.floor((dayStartUTC - PAY_PERIOD_ANCHOR_MS) / MS_PER_14_DAYS);
-  return periodIndex % 2 === 0;
+  const daysSinceAnchor = (dayStartUTC - PAY_PERIOD_ANCHOR_MS) / MS_PER_DAY;
+  const positionInCycle = ((daysSinceAnchor % DAYS_PER_CYCLE) + DAYS_PER_CYCLE) % DAYS_PER_CYCLE;
+  return positionInCycle < 14;
 }
 
 /** Returns the calendar date (year, month 0-based, day) displayed in the cell at cellIndex. */
