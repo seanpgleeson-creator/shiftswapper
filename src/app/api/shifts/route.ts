@@ -106,9 +106,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Normalize legacy location name so validation passes (client may send old name if cached).
-  if (typeof body === "object" && body !== null && "location" in body && (body as { location?: string }).location === "Green Pharmacy") {
-    (body as { location: string }).location = "Enhanced Care";
+  // Normalize request body for validation: trim location, accept legacy location name.
+  if (typeof body === "object" && body !== null) {
+    const b = body as Record<string, unknown>;
+    if (typeof b.location === "string") {
+      const loc = b.location.trim();
+      b.location = loc === "Green Pharmacy" ? "Enhanced Care" : loc;
+    }
   }
 
   const u = session.user as { id?: string; email?: string; name?: string; firstName?: string; lastName?: string; position?: string; phone?: string; role?: string };

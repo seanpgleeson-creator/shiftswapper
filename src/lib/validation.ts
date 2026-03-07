@@ -25,9 +25,9 @@ export const createShiftSchema = z
   .refine(
     (data) => {
       const d = new Date(data.shift_date + "T12:00:00.000Z");
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      return d >= today;
+      const now = new Date();
+      const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+      return d >= todayUTC;
     },
     { message: "Shift date must be today or in the future", path: ["shift_date"] }
   )
@@ -79,9 +79,9 @@ const createShiftAuthenticatedBase = z
   .refine(
     (data) => {
       const d = new Date(data.shift_date + "T12:00:00.000Z");
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      return d >= today;
+      const now = new Date();
+      const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+      return d >= todayUTC;
     },
     { message: "Shift date must be today or in the future", path: ["shift_date"] }
   )
@@ -111,9 +111,9 @@ export const createShiftAdminSchema = z
   .refine(
     (data) => {
       const d = new Date(data.shift_date + "T12:00:00.000Z");
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      return d >= today;
+      const now = new Date();
+      const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+      return d >= todayUTC;
     },
     { message: "Shift date must be today or in the future", path: ["shift_date"] }
   )

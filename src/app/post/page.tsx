@@ -158,8 +158,11 @@ export default function PostPage() {
             next[f.field] = f.message;
           });
           setErrors(next);
+          const firstMsg = data.fields[0]?.message;
+          setToast(firstMsg ? `${data.error ?? "Validation failed"}: ${firstMsg}` : (data.error ?? "Something went wrong. Please try again."));
+        } else {
+          setToast(data.error ?? "Something went wrong. Please try again.");
         }
-        setToast(data.error ?? "Something went wrong. Please try again.");
         return;
       }
       if (typeof window !== "undefined") {
