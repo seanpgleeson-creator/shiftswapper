@@ -25,6 +25,9 @@ export default function AccountPage() {
   const [codeVerifying, setCodeVerifying] = useState(false);
   const [codeError, setCodeError] = useState<string | null>(null);
   const [codeSuccess, setCodeSuccess] = useState(false);
+  const [phoneInput, setPhoneInput] = useState("");
+  const [phoneSaving, setPhoneSaving] = useState(false);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
 
   useEffect(() => {
     if (status !== "authenticated") {
@@ -39,6 +42,10 @@ export default function AccountPage() {
       })
       .finally(() => setLoadingMe(false));
   }, [status, codeSuccess]);
+  useEffect(() => {
+    if (me?.phone) setPhoneInput(me.phone);
+    else setPhoneInput("");
+  }, [me?.phone]);
 
   async function handleSmsConsentChange(checked: boolean) {
     setSmsError(null);
@@ -73,6 +80,34 @@ export default function AccountPage() {
       setCodeError("Something went wrong.");
     } finally {
       setCodeSending(false);
+    }
+  }
+
+  async function handleSavePhone(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = phoneInput.trim();
+    if (trimmed.length < 10 || !/^[\d\s\-+()]{10,}$/.test(trimmed)) {
+      setPhoneError("Enter a valid phone number (at least 10 digits).");
+      return;
+    }
+    setPhoneError(null);
+    setPhoneSaving(true);
+    try {
+      const res = await fetch("/api/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: trimmed }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setPhoneError(data.error ?? data.fields?.phone?.[0] ?? "Failed to update phone.");
+        return;
+      }
+      setMe((prev) => (prev ? { ...prev, phone: data.phone, phone_verified: data.phone_verified } : null));
+    } catch {
+      setPhoneError("Something went wrong.");
+    } finally {
+      setPhoneSaving(false);
     }
   }
 
@@ -141,10 +176,32 @@ export default function AccountPage() {
           <dt className="text-sm text-slate-500">Position</dt>
           <dd className="font-medium text-slate-800">{me?.position ?? "—"}</dd>
         </div>
-        {me?.phone && (
+        {(me?.phone || !hasPhone) && (
           <div>
             <dt className="text-sm text-slate-500">Phone</dt>
-            <dd className="font-medium text-slate-800">{me.phone}</dd>
+            {hasPhone ? (
+              <dd className="font-medium text-slate-800">{me?.phone}</dd>
+            ) : (
+              <dd>
+                <form onSubmit={handleSavePhone} className="flex flex-wrap items-end gap-2">
+                  <input
+                    type="tel"
+                    value={phoneInput}
+                    onChange={(e) => setPhoneInput(e.target.value)}
+                    placeholder="Add phone number"
+                    className="flex-1 min-w-[140px] rounded-md border border-slate-300 px-3 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500"
+                  />
+                  <button
+                    type="submit"
+                    disabled={phoneSaving}
+                    className="min-h-[40px] rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {phoneSaving ? "Saving…" : "Add phone"}
+                  </button>
+                </form>
+                {phoneError && <p className="mt-1 text-sm text-red-600">{phoneError}</p>}
+              </dd>
+            )}
           </div>
         )}
       </dl>

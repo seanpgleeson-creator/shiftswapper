@@ -200,7 +200,7 @@ export default function SignupPage() {
         </div>
         <div>
           <label htmlFor="phone" className="block text-sm font-medium text-slate-700 mb-1">
-            Phone <span className="text-slate-400">(optional)</span>
+            Phone {form.sms_consent ? <span className="text-red-500">*</span> : <span className="text-slate-400">(optional)</span>}
           </label>
           <input
             id="phone"
@@ -210,9 +210,11 @@ export default function SignupPage() {
             className={`block w-full rounded-md border px-3 py-2 text-slate-900 shadow-sm focus:ring-2 focus:ring-blue-500 ${
               errors.phone ? "border-red-500" : "border-slate-300"
             }`}
-            placeholder="For SMS when your shift is covered"
+            placeholder={form.sms_consent ? "Required for SMS" : "For SMS when your shift is covered"}
           />
-          <p className="mt-1 text-xs text-slate-500">If you add a phone number, you must agree to SMS below.</p>
+          {!form.sms_consent && (
+            <p className="mt-1 text-xs text-slate-500">If you add a phone number, you must opt in to SMS below.</p>
+          )}
           {errors.phone && (
             <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600">
               <ErrorIcon className="flex-shrink-0 mt-0.5" />
@@ -230,7 +232,7 @@ export default function SignupPage() {
               className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
             />
             <span className="text-sm text-slate-700">
-              I agree to receive SMS notifications for shift swap updates. Message &amp; data rates may apply. Reply STOP to opt out.
+              Get text when your shift is covered? Message &amp; data rates may apply. Reply STOP to opt out.
             </span>
           </label>
           {errors.sms_consent && (
@@ -264,7 +266,15 @@ export default function SignupPage() {
         </div>
         <button
           type="submit"
-          disabled={submitting || !form.first_name.trim() || !form.last_name.trim() || !form.email.trim() || !form.position || !form.password || (form.phone.trim().length > 0 && (!form.sms_consent || !!errors.phone))}
+          disabled={
+            submitting ||
+            !form.first_name.trim() ||
+            !form.last_name.trim() ||
+            !form.email.trim() ||
+            !form.position ||
+            !form.password ||
+            (form.sms_consent && (form.phone.trim().length < 10 || !/^[\d\s\-+()]{10,}$/.test(form.phone.trim())))
+          }
           className="w-full min-h-[44px] rounded-md bg-blue-600 px-4 py-2.5 font-medium text-white shadow-sm hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none"
         >
           {submitting ? "Creating account…" : "Sign up"}

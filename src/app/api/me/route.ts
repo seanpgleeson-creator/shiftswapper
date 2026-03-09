@@ -4,7 +4,13 @@ import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
-const updateMeSchema = z.object({ sms_consent: z.boolean() });
+const updateMeSchema = z.object({
+  sms_consent: z.boolean().optional(),
+  phone: z
+    .string()
+    .optional()
+    .refine((v) => v === undefined || v === null || v.trim() === "" || /^[\d\s\-+()]{10,}$/.test(v.trim()), "Invalid phone format"),
+});
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -93,19 +99,30 @@ export async function PATCH(request: NextRequest) {
     );
   }
   const now = new Date();
+  const data: { smsConsent?: boolean; smsConsentAt?: Date | null; phone?: string | null; phoneVerified?: boolean } = {};
+  if (parsed.data.sms_consent !== undefined) {
+    data.smsConsent = parsed.data.sms_consent;
+    data.smsConsentAt = parsed.data.sms_consent ? now : null;
+  }
+  if (parsed.data.phone !== undefined) {
+    const trimmed = parsed.data.phone?.trim() || null;
+    data.phone = trimmed;
+    if (trimmed) data.phoneVerified = false;
+  }
   const user = await prisma.user.update({
     where: { id: uid },
-    data: {
-      smsConsent: parsed.data.sms_consent,
-      smsConsentAt: parsed.data.sms_consent ? now : null,
-    },
+    data,
     select: {
       smsConsent: true,
       smsConsentAt: true,
+      phone: true,
+      phoneVerified: true,
     },
   });
   return NextResponse.json({
     sms_consent: user.smsConsent,
     sms_consent_at: user.smsConsentAt?.toISOString() ?? null,
+    phone: user.phone,
+    phone_verified: user.phoneVerified,
   });
 }

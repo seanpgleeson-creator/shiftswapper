@@ -70,6 +70,14 @@ export const signupSchema = z
       return true;
     },
     { message: "You must agree to receive SMS notifications when adding a phone number.", path: ["sms_consent"] }
+  )
+  .refine(
+    (data) => {
+      if (!data.sms_consent) return true;
+      const hasPhone = (data.phone ?? "").trim().length >= 10;
+      return hasPhone;
+    },
+    { message: "Phone is required when opting in to SMS.", path: ["phone"] }
   );
 
 export type SignupInput = z.infer<typeof signupSchema>;

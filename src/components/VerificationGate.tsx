@@ -14,7 +14,12 @@ export function VerificationGate({ children }: { children: React.ReactNode }) {
   const { status } = useSession();
   const pathname = usePathname();
   const router = useRouter();
-  const [me, setMe] = useState<{ email_verified?: boolean; phone_verified?: boolean } | null>(null);
+  const [me, setMe] = useState<{
+    email_verified?: boolean;
+    phone_verified?: boolean;
+    sms_consent?: boolean;
+    phone?: string | null;
+  } | null>(null);
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
@@ -49,6 +54,11 @@ export function VerificationGate({ children }: { children: React.ReactNode }) {
     if (checking || !me || isAllowed(pathname ?? "")) return;
     if (me.email_verified === false) {
       router.replace("/check-email");
+      return;
+    }
+    const hasPhone = (me.phone ?? "").trim().length >= 10;
+    if (me.sms_consent === true && hasPhone && me.phone_verified === false) {
+      router.replace("/verify-phone");
     }
   }, [me, checking, pathname, router]);
 

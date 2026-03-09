@@ -1,6 +1,6 @@
 # ShiftSwapper — Current Status & Next Steps
 
-Use this doc to jump back in. Last updated after Option C (phone verification opt-in; Account SMS settings).
+Use this doc to jump back in. Last updated after revised signup/SMS flow (SMS optional; phone required when opted in; gate and verify-email redirect by consent/phone/verified state).
 
 ---
 
@@ -12,11 +12,12 @@ Use this doc to jump back in. Last updated after Option C (phone verification op
 
 - **Email verification**
   - Signup sends verification email via Resend.
-  - User is redirected to **Check your email** (`/check-email`); link in email sets `email_verified = true` and redirects user to the app (`/calendar`).
+  - User is redirected to **Check your email** (`/check-email`); link in email sets `email_verified = true`. **Redirect after verify-email:** If user **opted in to SMS at signup** (has phone + `sms_consent`) and is **not yet phone-verified** → redirect to **/verify-phone**; else → **/calendar**.
   - Resend domain **hcmcshiftswap.com** verified (DKIM + SPF in Vercel DNS); **RESEND_FROM** set to `ShiftSwapper <noreply@hcmcshiftswap.com>` so emails can go to any address.
   - If the first email doesn’t send, the Check your email page shows a warning and a **Resend verification email** button (POST `/api/auth/resend-verification-email`).
 - **Access gate**
-  - Logged-in users who haven’t verified email are sent to `/check-email`; after email is verified, they’re sent to `/verify-phone` until `phone_verified` is true.
+  - **Email:** Logged-in users who have not verified email are sent to `/check-email`.
+  - **Phone:** Redirect to `/verify-phone` **only** when the user has **opted in to SMS** (`sms_consent` true), has a **phone** number on file, and **has not** verified it (`phone_verified` false). Users who did not opt in or have no phone are not redirected to verify-phone.
 - **Phone verification (code and UI only)**
   - Backend and UI are in place: POST `/api/auth/send-phone-code`, POST `/api/auth/verify-phone`, and `/verify-phone` page with 6-digit code entry and “Resend code.”
   - SMS sending is **not** working yet in production because **Twilio toll-free number verification is still in progress**. Until that’s approved, “Send code” will fail or not deliver.
@@ -43,11 +44,9 @@ Use this doc to jump back in. Last updated after Option C (phone verification op
 
 Once SMS works:
 
-1. Sign up with a new email/phone.
-2. Confirm redirect to **Check your email** and that the verification email arrives (from `noreply@hcmcshiftswap.com`).
-3. Click the link → confirm redirect to **Verify phone**.
-4. Click “Send code” → receive SMS → enter code → confirm access to app (e.g. `/post`, `/calendar`).
-5. Confirm that when a poster has not verified phone, they do **not** receive SMS when their shift is covered (cover flow still works; only SMS is gated).
+1. **Sign up with SMS opted in:** Use a new email, check "Get text when your shift is covered?" and enter phone. Submit → **Check your email** → click link → redirect to **Verify phone** → Send code → enter code → access app.
+2. **Sign up without SMS:** Do not check the SMS box (phone optional). Submit → Check your email → click link → redirect straight to **/calendar** (no verify-phone).
+3. Confirm that when a poster has not verified phone (or did not opt in), they do **not** receive SMS when their shift is covered (cover flow still works; only SMS is gated).
 
 ### 3. Optional follow-ups
 
@@ -61,10 +60,11 @@ Once SMS works:
 
 | Area              | Status | Notes |
 |-------------------|--------|--------|
-| Email verification| Done   | Resend domain verified; RESEND_FROM set; verify-email redirects to /calendar. |
-| Phone verification| Opt-in | Offered in Account only; does not block access. Twilio may be pending for sending. |
-| Access gate       | Done   | Email-only; redirects to /check-email when email not verified. |
+| Email verification| Done   | Resend domain verified; verify-email redirects to /verify-phone (if opted in + phone + not verified) or /calendar. |
+| Phone verification| Opt-in | Required only when user opted in and has phone but not yet verified; gate redirects to /verify-phone in that case. Twilio may be pending for sending. |
+| Access gate       | Done   | Email required; phone required only when sms_consent && phone && !phone_verified. |
 | SMS on cover      | Pending| Requires sms_consent and phone_verified; same Twilio number. |
+| Account add phone | Done   | PATCH /api/me accepts optional phone; Account shows "Add phone" when no phone; verify once, no re-verification when already verified. |
 
 ---
 

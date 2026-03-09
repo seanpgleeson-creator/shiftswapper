@@ -17,15 +17,20 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/login?error=invalid_or_expired", request.url));
   }
 
-  await prisma.user.update({
+  const updated = await prisma.user.update({
     where: { id: user.id },
     data: {
       emailVerified: true,
       emailVerificationToken: null,
       emailVerificationExpiresAt: null,
     },
+    select: { smsConsent: true, phone: true, phoneVerified: true },
   });
 
   const base = request.nextUrl.origin;
-  return NextResponse.redirect(new URL("/calendar", base));
+  const hasPhone = (updated.phone ?? "").trim().length >= 10;
+  const needsPhoneVerify =
+    updated.smsConsent === true && hasPhone && updated.phoneVerified === false;
+  const target = needsPhoneVerify ? "/verify-phone?email_verified=1" : "/calendar";
+  return NextResponse.redirect(new URL(target, base));
 }
