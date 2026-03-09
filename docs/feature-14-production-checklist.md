@@ -57,7 +57,7 @@ Your production app (e.g. Vercel) needs these so verification email and SMS work
 
 - **NEXTAUTH_URL** must be the exact URL users use to open your app in production. The verification link in the email is built from this. If it’s wrong or missing, the link will be broken or point to localhost.
 - **RESEND_***: Without `RESEND_API_KEY`, the verification email is not sent (signup still succeeds, but no email).
-- **TWILIO_***: Without these, “Send code” on /verify-phone will fail to send the SMS.
+- **TWILIO_***: Without these (or until your Twilio toll-free number is verified), “Send code” on /verify-phone will fail to send the SMS. **As of last update, toll-free verification is still in progress** — email verification works; SMS will work once Twilio approves the number.
 
 After adding or changing any variable, **redeploy** so the new values are used.
 
