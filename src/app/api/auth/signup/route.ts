@@ -70,8 +70,10 @@ export async function POST(request: NextRequest) {
   const verifyUrl = baseUrl
     ? `${baseUrl.replace(/\/$/, "")}/api/auth/verify-email?token=${encodeURIComponent(emailVerificationToken)}`
     : "";
+  let verificationEmailSent = false;
   if (verifyUrl) {
     const sent = await sendVerificationEmail(user.email, verifyUrl);
+    verificationEmailSent = sent.ok;
     if (!sent.ok) console.error("Verification email failed:", sent.error);
   } else {
     console.warn("NEXTAUTH_URL not set; verification email link not sent");
@@ -105,6 +107,7 @@ export async function POST(request: NextRequest) {
         phone_verified: user.phoneVerified,
       },
       message: "Account created. Check your email to verify, then sign in.",
+      verification_email_sent: verificationEmailSent,
     },
     { status: 201 }
   );

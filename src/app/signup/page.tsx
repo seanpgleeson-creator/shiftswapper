@@ -78,7 +78,8 @@ export default function SignupPage() {
         redirect: false,
       });
       if (signInResult?.ok) {
-        router.push("/check-email");
+        const emailFailed = data.verification_email_sent === false;
+        router.push(emailFailed ? "/check-email?email_failed=1" : "/check-email");
         router.refresh();
         return;
       }

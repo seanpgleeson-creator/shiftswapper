@@ -87,3 +87,14 @@ If any step fails, re-check the matching step above (deploy, migration, or env v
 | No verification email | Set **RESEND_API_KEY** (and optional RESEND_FROM) in production (Step 3) and redeploy. |
 | No SMS code | Set **TWILIO_*** in production (Step 3) and redeploy. |
 | Signup or verification errors about DB columns | Run **prisma migrate deploy** against production DB (Step 2). |
+| **Verification email never arrives** | See “Verification email not arriving?” below. Use “Resend verification email” on the Check your email page to try again. |
+
+---
+
+## Verification email not arriving?
+
+- **Check spam/junk** and “Promotions” (Gmail). The email is sent from **ShiftSwapper (onboarding@resend.dev)** unless you set `RESEND_FROM`.
+- **Resend free tier:** When using the default sender `onboarding@resend.dev`, Resend may only deliver to the **email address that owns your Resend account** until you verify a domain. If signups use a different address, the email may not be delivered.
+  - **Fix:** In [Resend](https://resend.com) → **Domains**, add and verify your domain (e.g. `hcmcshiftswap.com`). Then set **RESEND_FROM** in production to e.g. `ShiftSwapper <noreply@hcmcshiftswap.com>`. After that, verification emails can be sent to any address.
+- **Resend dashboard:** In Resend → **Emails** (or Logs), check whether the verification email was sent, delivered, or bounced. That will show if the failure is on Resend’s side or the recipient’s.
+- **App change:** If the first send failed, the “Check your email” page now shows a warning and a **Resend verification email** button so the user can request another email without creating a new account.
