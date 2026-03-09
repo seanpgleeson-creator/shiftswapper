@@ -27,5 +27,5 @@ export async function GET(request: NextRequest) {
   });
 
   const base = request.nextUrl.origin;
-  return NextResponse.redirect(new URL("/verify-phone?email_verified=1", base));
+  return NextResponse.redirect(new URL("/calendar", base));
 }

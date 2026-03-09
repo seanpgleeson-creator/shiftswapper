@@ -49,10 +49,6 @@ export function VerificationGate({ children }: { children: React.ReactNode }) {
     if (checking || !me || isAllowed(pathname ?? "")) return;
     if (me.email_verified === false) {
       router.replace("/check-email");
-      return;
-    }
-    if (me.phone_verified === false) {
-      router.replace("/verify-phone");
     }
   }, [me, checking, pathname, router]);
 

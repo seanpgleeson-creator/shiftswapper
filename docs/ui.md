@@ -64,29 +64,29 @@ The landing page loads instantly. When auth is implemented, unauthenticated user
 
 **Purpose:** Let a new team member create an account.
 
-**Form fields:** First name, Last name, Email, Position (single dropdown — list from GET /api/roles: Pharmacist, Technician, Intern), **Phone (required, for SMS)**. Password (or "Send magic link" if using magic-link auth). **SMS opt-in checkbox (required):** Unchecked by default; label: "I agree to receive SMS notifications for shift swap updates. Message & data rates may apply. Reply STOP to opt out." User cannot submit until the checkbox is checked. Submit → POST /api/auth/signup (body includes `sms_consent: true`).
+**Form fields:** First name, Last name, Email, Position (single dropdown — list from GET /api/roles: Pharmacist, Technician, Intern), **Phone (optional)**. Password (or "Send magic link" if using magic-link auth). **SMS opt-in checkbox (optional):** Unchecked by default; label: "I agree to receive SMS notifications for shift swap updates. Message & data rates may apply. Reply STOP to opt out." If the user enters a phone number, they **must** check the SMS checkbox to submit. Submit → POST /api/auth/signup (body includes `phone` if provided, `sms_consent` true/false).
 
-**After submit:** On success, the user is created but **not** yet fully verified. Show "Check your email" and explain they must click the verification link. A verification email is sent via Resend (or app email provider) with a link; clicking the link verifies the email. After they verify email (or when they next open the app with session), direct them to **phone verification** (see Verify phone below).
+**After submit:** On success, the user is created but **not** yet fully verified. Show "Check your email" and explain they must click the verification link. A verification email is sent via Resend (or app email provider) with a link; clicking the link verifies the email and redirects to the app (e.g. `/calendar`). Phone verification is **optional** and is offered in **Account** (see below), not as a required step.
 
-**Consent:** Consent is stored with the user profile (`sms_consent`, `sms_consent_at`). SMS notifications (e.g. when a shift is covered) are only sent to users who have opted in and have verified their phone.
+**Consent:** Consent is stored with the user profile (`sms_consent`, `sms_consent_at`). Users can **opt out** of SMS in Account (user settings). SMS notifications (e.g. when a shift is covered) are only sent to users who have opted in and have verified their phone.
 
 **UX note:** After signup, the admin receives an email with the new user's first name, last name, email, and position so they can validate the user is an employee.
 
 ### Verify email
 
-After signup, the user sees a "Check your email" screen with instructions to click the link in the verification email. When they click the link (verify-email endpoint), they are redirected to login or to the phone verification step.
+After signup, the user sees a "Check your email" screen with instructions to click the link in the verification email. When they click the link (verify-email endpoint), they are redirected to the app (e.g. `/calendar`). There is no required phone verification step in the signup flow.
 
 ### Verify phone (`/verify-phone`)
 
-**Purpose:** Collect the 6-digit code sent by SMS so the user can access the app.
+**Purpose:** Optional. Collect the 6-digit code sent by SMS so the user can receive SMS when their shift is covered.
 
-**When shown:** User is logged in (or has session) but `phone_verified === false` (and after `email_verified === true`). Redirect from protected routes or after login until phone is verified.
+**When shown:** Not required for app access. Users who want SMS can verify from **Account**: the Account page has an "SMS notifications" section with a consent checkbox (opt in/out) and, when they have a phone and consent but have not verified, a "Send code" flow to verify their phone. The standalone `/verify-phone` page remains available (e.g. from email link in older flows or direct link).
 
-**UI:** Simple screen: short instruction ("We sent a 6-digit code to your phone. Enter it below."), single input (6 digits), "Verify" button, optional "Resend code" that calls send-phone-code. On success → server sets `phone_verified`; redirect to `/` or `/calendar`.
+**UI:** Simple screen: short instruction ("We sent a 6-digit code to your phone. Enter it below."), single input (6 digits), "Verify" button, optional "Resend code" that calls send-phone-code. On success → server sets `phone_verified`.
 
-**Access gate:** The app checks `email_verified` and `phone_verified` (e.g. in middleware or layout). If `email_verified` is false → show "Verify your email" / "Check your email" and block app access. If `phone_verified` is false (and email is verified) → show `/verify-phone` and block full access until the code is verified.
+**Access gate:** The app checks **only** `email_verified`. If `email_verified` is false → show "Verify your email" / "Check your email" and block app access. **Phone verification does not block access**; users can use the app without verifying phone (they simply won't receive SMS until they opt in and verify in Account).
 
-**Production note:** Email verification is live. Phone verification (SMS code) depends on Twilio; toll-free verification is in progress, so "Send code" may not deliver until that completes. See [current-status.md](current-status.md).
+**Production note:** Email verification is live. Phone verification (SMS code) depends on Twilio; toll-free verification may be in progress. See [current-status.md](current-status.md).
 
 ---
 
@@ -205,9 +205,13 @@ Tapping a shift card opens the Shift Detail view.
 
 ### 3.7 Account (`/account`)
 
-**Purpose:** Let the logged-in user view their profile and manage calendar sync.
+**Purpose:** Let the logged-in user view their profile, manage SMS preferences, and (when implemented) calendar sync.
 
-When implemented: show user profile (first name, last name, email, position, **phone** — required for SMS, visible in account). Optional "Edit" later. Include a **Calendar sync** block: explain that the user can add a subscription URL (e.g. "Add calendar by URL" in Google Calendar or Outlook) pointing to their covered-shifts feed so future covered shifts appear automatically. Provide a "Copy feed URL" button (authenticated URL or token-based URL). No manual .ics download required once subscribed.
+**Profile:** Show first name, last name, email, position, phone (if set). Optional "Edit" later.
+
+**SMS notifications:** A section "SMS notifications" with a checkbox: "Receive SMS when my shift is covered." User can **opt in or opt out** at any time (PATCH /api/me with `sms_consent`). If they have a phone and consent but have not verified their phone, show a "Verify your phone" flow: "Send code" button and 6-digit code entry; on success, `phone_verified` is set and they will receive SMS when their shift is covered. This is the only place (other than optional /verify-phone) where phone verification is offered; it is not required for app access.
+
+**Calendar sync (when implemented):** Block explaining that the user can add a subscription URL to their calendar app for covered shifts. "Copy feed URL" button. No manual .ics download required once subscribed.
 
 ---
 

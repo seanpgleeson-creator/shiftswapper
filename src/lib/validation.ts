@@ -58,13 +58,19 @@ export const signupSchema = z
     position: z.enum(ROLES as unknown as [string, ...string[]]),
     phone: z
       .string()
-      .min(1, "Phone is required for SMS notifications")
-      .refine((v) => /^[\d\s\-+()]{10,}$/.test(v), "Invalid phone format"),
+      .optional()
+      .refine((v) => !v || v.trim() === "" || /^[\d\s\-+()]{10,}$/.test(v.trim()), "Invalid phone format"),
     password: z.string().min(8, "Password must be at least 8 characters"),
-    sms_consent: z.literal(true, {
-      errorMap: () => ({ message: "You must agree to receive SMS notifications to sign up." }),
-    }),
-  });
+    sms_consent: z.boolean(),
+  })
+  .refine(
+    (data) => {
+      const hasPhone = (data.phone ?? "").trim().length >= 10;
+      if (hasPhone) return data.sms_consent === true;
+      return true;
+    },
+    { message: "You must agree to receive SMS notifications when adding a phone number.", path: ["sms_consent"] }
+  );
 
 export type SignupInput = z.infer<typeof signupSchema>;
 

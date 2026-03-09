@@ -1,6 +1,6 @@
 # ShiftSwapper — Current Status & Next Steps
 
-Use this doc to jump back in. Last updated after weekend work (email verification live; SMS verification pending Twilio).
+Use this doc to jump back in. Last updated after Option C (phone verification opt-in; Account SMS settings).
 
 ---
 
@@ -12,7 +12,7 @@ Use this doc to jump back in. Last updated after weekend work (email verificatio
 
 - **Email verification**
   - Signup sends verification email via Resend.
-  - User is redirected to **Check your email** (`/check-email`); link in email sets `email_verified = true` and sends user to **Verify phone** (`/verify-phone`).
+  - User is redirected to **Check your email** (`/check-email`); link in email sets `email_verified = true` and redirects user to the app (`/calendar`).
   - Resend domain **hcmcshiftswap.com** verified (DKIM + SPF in Vercel DNS); **RESEND_FROM** set to `ShiftSwapper <noreply@hcmcshiftswap.com>` so emails can go to any address.
   - If the first email doesn’t send, the Check your email page shows a warning and a **Resend verification email** button (POST `/api/auth/resend-verification-email`).
 - **Access gate**
@@ -61,10 +61,10 @@ Once SMS works:
 
 | Area              | Status | Notes |
 |-------------------|--------|--------|
-| Email verification| Done   | Resend domain verified; RESEND_FROM set; resend-verification-email in place. |
-| Phone verification| Pending| Code + UI done; waiting on Twilio toll-free verification to send SMS. |
-| Access gate       | Done   | Redirects to /check-email and /verify-phone by verification state. |
-| SMS on cover      | Pending| Same Twilio number; will work once toll-free is verified. |
+| Email verification| Done   | Resend domain verified; RESEND_FROM set; verify-email redirects to /calendar. |
+| Phone verification| Opt-in | Offered in Account only; does not block access. Twilio may be pending for sending. |
+| Access gate       | Done   | Email-only; redirects to /check-email when email not verified. |
+| SMS on cover      | Pending| Requires sms_consent and phone_verified; same Twilio number. |
 
 ---
 

@@ -140,19 +140,20 @@ Pay periods are two-week blocks used only for calendar display so users can ensu
 
 Use session-based auth (e.g. NextAuth.js with credentials or magic link, or Clerk). Session identifies `user.id` and `user.role`; middleware or session check injects the current user on protected routes.
 
-**Signup flow (with email and phone verification):** After creating the user, send a verification email (Resend) containing a link (e.g. /api/auth/verify-email?token=...). The verify-email endpoint validates the token and sets `email_verified = true`. The user must verify email before being treated as fully verified (and before phone verification in the flow). After email is verified, the user is directed to phone verification: send a 6-digit code via Twilio to the user's profile phone; user enters the code on the verify-phone screen; on success set `phone_verified = true`.
+**Signup flow (with email verification; phone optional):** After creating the user, send a verification email (Resend) containing a link (e.g. /api/auth/verify-email?token=...). The verify-email endpoint validates the token and sets `email_verified = true` and redirects to the app (e.g. /calendar). **Phone is optional at signup.** If the user provides a phone number, they must agree to SMS consent (sms_consent true). Phone verification (6-digit code) is **not** required for app access; it is offered in Account (user settings). Users can opt out of SMS consent in Account at any time.
 
-**Access rule:** Protected routes (e.g. /post, /calendar) should allow access only when the session user has `email_verified === true` and `phone_verified === true`. If `email_verified` is false, show "Verify your email" and block app access. If `phone_verified` is false (and email is verified), show the phone code entry screen and block full access until verified.
+**Access rule:** Protected routes (e.g. /post, /calendar) allow access when the session user has `email_verified === true`. **Phone verification does not block access.** If `email_verified` is false, show "Verify your email" and block app access.
 
 | Method | Path                 | Auth Required | Description                                                                 |
 |--------|----------------------|---------------|-----------------------------------------------------------------------------|
-| POST   | /api/auth/signup     | No            | Body: first_name, last_name, email, password (or magic link), position, **phone (required, for SMS)**, **sms_consent (required, must be true)**. Create user with role 'member'; store sms_consent and set sms_consent_at to now when sms_consent is true. On success: send verification email (Resend) with link; send notification email to admin. User is not fully verified until email_verified and phone_verified are true. Return session or redirect. |
+| POST   | /api/auth/signup     | No            | Body: first_name, last_name, email, password (or magic link), position, **phone (optional)**, **sms_consent (boolean; required true if phone provided)**. Create user with role 'member'; store sms_consent and set sms_consent_at when sms_consent is true. On success: send verification email (Resend) with link; send notification email to admin. Return session or redirect. |
 | POST   | /api/auth/login      | No            | Credentials or magic link; establish session.                               |
 | POST   | /api/auth/logout     | No            | Clear session.                                                              |
-| GET or POST | /api/auth/verify-email | No        | Accept token (query or body); validate and set `email_verified = true`; redirect to login or to phone verification. |
+| GET or POST | /api/auth/verify-email | No        | Accept token (query or body); validate and set `email_verified = true`; redirect to app (e.g. /calendar). |
 | POST   | /api/auth/send-phone-code | Session  | Sends 6-digit code via Twilio to the user's profile phone; store code and short expiry (e.g. 10 min) in DB or cache. |
 | POST   | /api/auth/verify-phone   | Session  | Body: `{ code: string }`. Validate code; if correct, set `phone_verified = true` and return success. |
 | GET    | /api/auth/session or /api/me | Session  | Return current user (id, first_name, last_name, email, position, phone, role, sms_consent, sms_consent_at, **email_verified**, **phone_verified**). 401 if unauthenticated. |
+| PATCH  | /api/me                 | Session  | Body: `{ sms_consent: boolean }`. Update user's SMS consent; set sms_consent_at when true. Used for opt-out (and opt-in) in Account. |
 
 ### 5.3 Shifts
 
