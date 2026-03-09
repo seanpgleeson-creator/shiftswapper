@@ -2,6 +2,7 @@
 
 Feature-driven development: each phase delivers an end-to-end slice you can **test in production**. Hosting is **GitHub + Vercel**; use production Postgres and verify each feature live after deploy. No separate staging.
 
+- **Current status and next steps:** [docs/current-status.md](current-status.md)
 - **PRD and scope:** [docs/prd.md](prd.md)
 - **UI details:** [docs/ui.md](ui.md)
 - **API and data:** [docs/backend.md](backend.md)
@@ -343,6 +344,8 @@ Goal: Live site with navigation and placeholders so every route exists.
 - [x] **Access gate:** If the user is logged in but `email_verified` is false, show "Verify your email" and block access to /post, /calendar, etc. If `phone_verified` is false (and email is verified), show the code entry screen and block full access until verified.
 
 **Verify in production:** Sign up → receive email link → click to verify email → receive SMS code → enter code on verify-phone screen → access app; when a poster has not verified phone, they do not receive SMS on cover.
+
+**Production status (as of last update):** Email verification is live (Resend domain verified, RESEND_FROM set). Phone/SMS verification is implemented but **pending Twilio toll-free number verification**; until that completes, "Send code" and cover SMS will not send. See [current-status.md](current-status.md).
 
 ---
 

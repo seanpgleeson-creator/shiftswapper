@@ -86,6 +86,8 @@ After signup, the user sees a "Check your email" screen with instructions to cli
 
 **Access gate:** The app checks `email_verified` and `phone_verified` (e.g. in middleware or layout). If `email_verified` is false → show "Verify your email" / "Check your email" and block app access. If `phone_verified` is false (and email is verified) → show `/verify-phone` and block full access until the code is verified.
 
+**Production note:** Email verification is live. Phone verification (SMS code) depends on Twilio; toll-free verification is in progress, so "Send code" may not deliver until that completes. See [current-status.md](current-status.md).
+
 ---
 
 ### 3.3 Login (`/login`)

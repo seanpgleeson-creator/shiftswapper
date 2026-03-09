@@ -339,6 +339,7 @@ Both emails (and SMS when implemented) are sent immediately after a successful c
 - **Content:** Include the **coverer name** and **coverer phone number**, plus a **prompt to send the shift officially in UKG** (e.g. "Send this shift officially in UKG to complete the swap."). Shift Swapper is separate from UKG; manual transfer is required. `coverer_phone` is stored on the shift at cover time (from session when authenticated) and passed into the SMS payload.
 - **Implementation:** Use Twilio (or similar) API. Document env vars: e.g. `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` (or equivalent). SMS is additive; email behavior is unchanged. If SMS send fails, log and do not roll back the cover. Phone verification (6-digit code) uses the same Twilio env vars; document verification code storage (DB or cache) per implementation.
 - **Twilio trial:** Trial accounts can only send SMS to verified caller IDs. In Twilio Console → Phone Numbers → Manage → Verified Caller IDs, add the poster’s number (and any test numbers). Production accounts do not have this restriction.
+- **Current production:** Email verification is live (Resend domain verified). SMS (verification code and cover notification) is implemented but pending Twilio toll-free number verification. See [current-status.md](current-status.md).
 
 ### Implementation Notes
 

@@ -1,6 +1,6 @@
 # Feature 14 (Email & Phone Verification) — Production Checklist
 
-**Yes, email and phone verification should be live in production.** If new signups are not seeing the verification flow, one or more of the steps below is missing.
+**Current status:** Email verification is **live** (Resend domain verified, RESEND_FROM set). Phone/SMS verification is **pending** — code and UI are deployed, but Twilio toll-free number verification is still in progress, so "Send code" and cover SMS will not work until that completes. See [current-status.md](current-status.md) for a full summary and next steps.
 
 ## What should happen for a new signup
 
@@ -85,7 +85,7 @@ If any step fails, re-check the matching step above (deploy, migration, or env v
 | No redirect to /check-email after signup | Deploy latest code (Step 1). |
 | Verification link missing or wrong | Set **NEXTAUTH_URL** in production (Step 3) and redeploy. |
 | No verification email | Set **RESEND_API_KEY** (and optional RESEND_FROM) in production (Step 3) and redeploy. |
-| No SMS code | Set **TWILIO_*** in production (Step 3) and redeploy. |
+| No SMS code | Set **TWILIO_*** in production (Step 3) and redeploy. Until Twilio toll-free verification is complete, SMS will not send. |
 | Signup or verification errors about DB columns | Run **prisma migrate deploy** against production DB (Step 2). |
 | **Verification email never arrives** | See “Verification email not arriving?” below. Use “Resend verification email” on the Check your email page to try again. |
 
