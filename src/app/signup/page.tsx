@@ -232,7 +232,7 @@ export default function SignupPage() {
               className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
             />
             <span className="text-sm text-slate-700">
-              Get text when your shift is covered? Message &amp; data rates may apply. Reply STOP to opt out.
+              Get text when your shift is covered? By providing your phone number, you consent to receive SMS notifications from ShiftSwapper. Message &amp; data rates may apply. Reply STOP to opt out.
             </span>
           </label>
           {errors.sms_consent && (

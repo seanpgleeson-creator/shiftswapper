@@ -349,6 +349,22 @@ Goal: Live site with navigation and placeholders so every route exists.
 
 ---
 
+## Next steps: Toll-free SMS compliance and launch
+
+Site updates for toll-free verification are implemented. Use this list to ship and finish SMS.
+
+### Deploy and review
+
+- [x] Deploy compliance changes to production: `/privacy`, `/terms`, footer (ShiftSwapper + Privacy + Terms links), and updated SMS disclosure/opt-out copy on signup and Account.
+- [x] Review and customize draft text on `/privacy` and `/terms` for your organization (contact email, legal wording). Drafts are live; edit the page content in `src/app/privacy/page.tsx` and `src/app/terms/page.tsx` as needed. See [docs/toll-free-sms-compliance.md](toll-free-sms-compliance.md).
+
+### Toll-free verification and SMS (manual)
+
+- [ ] **Resubmit (or submit) toll-free number verification with Twilio.** In Twilio Console, use the toll-free verification form and point reviewers to your live site. The site now has: app name visible (footer), service description (landing), explicit SMS consent language (signup + Account), Privacy Policy, Terms of Service, and opt-out (Reply STOP) on signup and Account.
+- [ ] **Once Twilio toll-free is approved:** In Vercel, set production env vars (`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`), redeploy if needed, then test: signup with SMS opted in → verify email → verify phone → receive SMS on cover. See [current-status.md](current-status.md) and [feature-14-production-checklist.md](feature-14-production-checklist.md).
+
+---
+
 ## Parallel Work Summary
 
 | Phase / Feature | Can run in parallel |
