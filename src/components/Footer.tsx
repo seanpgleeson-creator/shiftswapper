@@ -23,6 +23,7 @@ export function Footer() {
         >
           Upcoming Features
         </Link>
+        <span className="text-slate-600 text-sm">Operated by Sean Gleeson</span>
       </div>
     </footer>
   );
