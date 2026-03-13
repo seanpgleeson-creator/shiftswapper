@@ -353,6 +353,10 @@ Goal: Live site with navigation and placeholders so every route exists.
 
 Site updates for toll-free verification are implemented. Use this list to ship and finish SMS.
 
+### Footer operator credit
+
+- [x] Add “Operated by Sean Gleeson” to the site footer on every page; styling matches existing footer (text-slate-600, text-sm).
+
 ### Deploy and review
 
 - [x] Deploy compliance changes to production: `/privacy`, `/terms`, footer (ShiftSwapper + Privacy + Terms links), and updated SMS disclosure/opt-out copy on signup and Account.
