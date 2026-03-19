@@ -1,4 +1,4 @@
-# ShiftSwapper — Current Status & Next Steps
+# ShiftSwap — Current Status & Next Steps
 
 Use this doc to jump back in. Last updated after revised signup/SMS flow (SMS optional; phone required when opted in; gate and verify-email redirect by consent/phone/verified state).
 
@@ -13,7 +13,7 @@ Use this doc to jump back in. Last updated after revised signup/SMS flow (SMS op
 - **Email verification**
   - Signup sends verification email via Resend.
   - User is redirected to **Check your email** (`/check-email`); link in email sets `email_verified = true`. **Redirect after verify-email:** If user **opted in to SMS at signup** (has phone + `sms_consent`) and is **not yet phone-verified** → redirect to **/verify-phone**; else → **/calendar**.
-  - Resend domain **hcmcshiftswap.com** verified (DKIM + SPF in Vercel DNS); **RESEND_FROM** set to `ShiftSwapper <noreply@hcmcshiftswap.com>` so emails can go to any address.
+  - Resend domain **hcmcshiftswap.com** verified (DKIM + SPF in Vercel DNS); **RESEND_FROM** set to `ShiftSwap <noreply@hcmcshiftswap.com>` so emails can go to any address.
   - If the first email doesn’t send, the Check your email page shows a warning and a **Resend verification email** button (POST `/api/auth/resend-verification-email`).
 - **Access gate**
   - **Email:** Logged-in users who have not verified email are sent to `/check-email`.
@@ -65,6 +65,8 @@ Once SMS works:
 | Access gate       | Done   | Email required; phone required only when sms_consent && phone && !phone_verified. |
 | SMS on cover      | Pending| Requires sms_consent and phone_verified; same Twilio number. |
 | Account add phone | Done   | PATCH /api/me accepts optional phone; Account shows "Add phone" when no phone; verify once, no re-verification when already verified. |
+| Sentry            | Done   | @sentry/nextjs installed; config files, error boundaries (root, calendar, account), instrumentation hook. Needs DSN env var in Vercel. |
+| Bug report        | Done   | /bug-report page + POST /api/bug-report; "Report a Bug" in nav (authenticated). Logs + Sentry.captureMessage. |
 
 ---
 
