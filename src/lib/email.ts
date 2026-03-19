@@ -1,7 +1,7 @@
 import { Resend } from "resend";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-const fromEmail = process.env.RESEND_FROM ?? "ShiftSwapper <onboarding@resend.dev>";
+const fromEmail = process.env.RESEND_FROM ?? "ShiftSwap <onboarding@resend.dev>";
 
 export type CoverEmailPayload = {
   posterEmail: string;
@@ -35,11 +35,11 @@ Good news -- ${payload.covererName} will be covering your shift:
 
 Please confirm the change with your scheduler.
 
--- ShiftSwapper`;
+-- ShiftSwap`;
 
   const schedulerBody = `Hi,
 
-A shift has been picked up via ShiftSwapper. Please update the schedule.
+A shift has been picked up via ShiftSwap. Please update the schedule.
 
   Date:      ${payload.shiftDate}
   Time:      ${payload.startTime} - ${payload.endTime}
@@ -48,7 +48,7 @@ A shift has been picked up via ShiftSwapper. Please update the schedule.
   Originally posted by: ${payload.posterName}
   Covered by:           ${payload.covererName} (${payload.covererEmail})
 
--- ShiftSwapper`;
+-- ShiftSwap`;
 
   let posterOk = false;
   let schedulerOk = false;
@@ -104,8 +104,8 @@ export async function sendVerificationEmail(
     const res = await resend.emails.send({
       from: fromEmail,
       to,
-      subject: "Verify your email — ShiftSwapper",
-      text: `Please verify your email by clicking this link:\n\n${verifyUrl}\n\nIf you didn't create an account, you can ignore this email.\n\n— ShiftSwapper`,
+      subject: "Verify your email — ShiftSwap",
+      text: `Please verify your email by clicking this link:\n\n${verifyUrl}\n\nIf you didn't create an account, you can ignore this email.\n\n— ShiftSwap`,
     });
     return { ok: res.data != null, error: res.error?.message };
   } catch (e) {
@@ -127,8 +127,8 @@ export async function sendSignupNotificationToAdmin(
     const res = await resend.emails.send({
       from: fromEmail,
       to: adminEmail,
-      subject: `ShiftSwapper: New signup – ${user.firstName} ${user.lastName}`,
-      text: `A new user signed up for ShiftSwapper:\n\nName: ${user.firstName} ${user.lastName}\nEmail: ${user.email}\nPosition: ${user.position}\n\n-- ShiftSwapper`,
+      subject: `ShiftSwap: New signup – ${user.firstName} ${user.lastName}`,
+      text: `A new user signed up for ShiftSwap:\n\nName: ${user.firstName} ${user.lastName}\nEmail: ${user.email}\nPosition: ${user.position}\n\n-- ShiftSwap`,
     });
     return { ok: res.data != null, error: res.error?.message };
   } catch (e) {

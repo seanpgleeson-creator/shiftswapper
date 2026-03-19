@@ -4,7 +4,7 @@ export function Footer() {
   return (
     <footer className="border-t border-slate-200 bg-white mt-auto">
       <div className="max-w-4xl mx-auto px-4 py-6 flex flex-wrap items-center gap-x-6 gap-y-2">
-        <span className="text-slate-600 text-sm font-medium">ShiftSwapper</span>
+        <span className="text-slate-600 text-sm font-medium">ShiftSwap</span>
         <Link
           href="/privacy"
           className="inline-flex items-center min-h-[44px] text-slate-600 hover:text-slate-900 text-sm"
@@ -18,12 +18,18 @@ export function Footer() {
           Terms of Service
         </Link>
         <Link
+          href="/about"
+          className="inline-flex items-center min-h-[44px] text-slate-600 hover:text-slate-900 text-sm"
+        >
+          About
+        </Link>
+        <Link
           href="/upcoming-features"
           className="inline-flex items-center min-h-[44px] text-slate-600 hover:text-slate-900 text-sm"
         >
           Upcoming Features
         </Link>
-        <span className="text-slate-600 text-sm">Operated by Sean Gleeson</span>
+        <span className="text-slate-600 text-sm">Built and operated by Sean Gleeson</span>
       </div>
     </footer>
   );

@@ -37,8 +37,7 @@ function CheckEmailContent() {
           <p className="font-medium">We couldn&apos;t send the verification email.</p>
           <p className="mt-1">
             This can happen if your inbox blocks messages from our sender, or due to a temporary issue. You can try
-            &quot;Resend verification email&quot; below, or try again later. Emails are sent from ShiftSwapper
-            (onboarding@resend.dev).
+            &quot;Resend verification email&quot; below, or try again later. Emails are sent from ShiftSwap using our verified domain sender.
           </p>
         </div>
       )}

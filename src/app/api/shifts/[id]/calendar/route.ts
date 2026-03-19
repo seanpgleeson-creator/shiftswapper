@@ -68,12 +68,12 @@ export async function GET(
   const startDate = startDt.toUTC().toJSDate();
   const endDate = endDt.toUTC().toJSDate();
 
-  const cal = ical({ name: "ShiftSwapper" });
+  const cal = ical({ name: "ShiftSwap" });
   cal.createEvent({
     start: startDate,
     end: endDate,
     summary: `Pharmacy Shift - ${shift.location} (${shift.role})`,
-    description: `Covered via ShiftSwapper. Originally posted by ${shift.posterName}.`,
+    description: `Covered via ShiftSwap. Originally posted by ${shift.posterName}.`,
     location: shift.location,
     status: ICalEventStatus.CONFIRMED,
   });
