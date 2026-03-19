@@ -74,8 +74,8 @@ export default function TermsPage() {
           <p>ShiftSwap is built and operated by Sean Gleeson.</p>
           <p className="mt-2">
             Questions about these terms can be sent to{" "}
-            <a href="mailto:sean@hcmcshiftswap.com" className="text-blue-600 hover:text-blue-800">
-              sean@hcmcshiftswap.com
+            <a href="mailto:sean.gleeson@hcmcshiftswap.com" className="text-blue-600 hover:text-blue-800">
+              sean.gleeson@hcmcshiftswap.com
             </a>
             .
           </p>
