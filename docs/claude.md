@@ -1,48 +1,69 @@
-# Handoff: ShiftSwapper — resume here
+# Handoff: ShiftSwap — resume here
 
 Use this when picking up the project. See [docs/todo.md](todo.md) for the full checklist and [docs/current-status.md](current-status.md) for production status.
 
 ---
 
-## Current state (what’s done)
+## Current state (what's done)
 
 ### Auth and verification (Feature 14)
 
-- **Signup:** Email required. SMS is optional via “Get text when your shift is covered?” If they check it, phone is required and validated at signup. After signup → Check your email; verification link sets `email_verified = true`.
-- **Verify-email redirect:** If user opted in to SMS (has phone + `sms_consent`) and is not yet phone-verified → redirect to **/verify-phone**; else → **/calendar**.
-- **Access gate:** Email verification always required. Phone verification required **only** when `sms_consent && phone && !phone_verified` (redirect to /verify-phone). Users who didn’t opt in or have no phone are not sent to verify-phone.
-- **Account:** Users can add or update phone via PATCH /api/me (optional `phone`). SMS section has consent toggle; if they have phone + consent but not verified, “Send code” + 6-digit verify. Once verified, no re-verification—just show phone and toggle.
-- **SMS on cover:** Only when poster has `sms_consent` and `phone_verified`; Twilio sends cover notification. SMS sending is **pending Twilio toll-free number verification** in production.
+- **Signup:** Email required. SMS is optional via "Get text when your shift is covered?" If checked, phone is required and validated at signup.
+- **Verify-email redirect:** If user opted into SMS (phone + `sms_consent`) and is not phone-verified -> redirect to **/verify-phone**; else -> **/calendar**.
+- **Access gate:** Email verification is always required. Phone verification is required only when `sms_consent && phone && !phone_verified`.
+- **Account:** Users can add/update phone via PATCH `/api/me`; SMS verify flow appears only when needed.
+- **SMS on cover:** Sent only when poster has `sms_consent` and `phone_verified`; Twilio still pending toll-free approval.
 
-### Toll-free SMS compliance (site ready for verification)
+### Toll-free compliance and branding updates (new)
 
-- **Footer:** ShiftSwapper (name visible), links to Privacy Policy, Terms of Service, Upcoming Features, and “Operated by Sean Gleeson.”
-- **Pages:** `/privacy` (draft Privacy Policy, phone/SMS and contact SeanPGleeson@gmail.com), `/terms` (draft Terms, SMS program, STOP, contact).
-- **SMS disclosure:** Signup and Account include: “By providing your phone number, you consent to receive SMS notifications from ShiftSwapper. Message & data rates may apply. Reply STOP to opt out/unsubscribe.”
-- **Checklist:** [docs/toll-free-sms-compliance.md](toll-free-sms-compliance.md).
+- Product branding is now **ShiftSwap** (user-facing copy updated across UI, SMS/email text, and calendar descriptions).
+- Footer now shows **ShiftSwap**, includes **About** link, and states: "Built and operated by Sean Gleeson."
+- New public **/about** page includes business description and visible contact info:
+  - Address: 20475 Summerville Road, Deephaven, MN 55331
+  - Phone: 952-393-6886
+  - Email: sean@hcmcshiftswap.com
+- Privacy and Terms pages updated to ShiftSwap branding, domain email, mailing address, and phone; draft wording removed.
+- Verification gate now allows `/about`, `/privacy`, `/terms` so these pages remain reachable for review.
 
-### Deploy
+### Sentry and bug reporting (Feature 15)
 
-- **Production:** `main` branch → Vercel. Recent work (revised signup/SMS flow, privacy/terms, footer operator credit) is merged to `main` and pushed. Feature work may happen on branches (e.g. `feature/itemhub`); deploy = cherry-pick or merge to `main` and push.
+- **Sentry SDK:** `@sentry/nextjs` integrated with `sentry.client.config.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts`, and `src/instrumentation.ts`.
+- **Error boundaries:** Root, global, calendar, and account error boundaries capture exceptions to Sentry.
+- **Bug report:** `/bug-report` page + POST `/api/bug-report`; nav includes "Report a Bug" for authenticated users.
+- **Sentry project setup in progress:** org `shift-swap`, project `javascript-nextjs`; env vars need to be finalized in Vercel and deployed.
+
+### Deploy status
+
+- Production deploy target: `main` branch -> Vercel.
+- Latest work in this session updates branding/compliance and Twilio-readiness; commit and push are still required.
 
 ---
 
 ## System context
 
-ShiftSwapper operates **separately** from the company’s UKG scheduling system. A manual transfer is required from ShiftSwapper into UKG. SMS/text notifications are intended to bridge the gap (e.g. prompt poster to send the shift officially in UKG). The app is a **non-production** tool.
+ShiftSwap operates separately from the company's UKG scheduling system. A manual transfer is required from ShiftSwap into UKG. SMS/text notifications bridge that gap (e.g., prompt poster to send shift officially in UKG).
 
 ---
 
-## Next steps when you pick up the project
+## Immediate next steps
 
-1. **Twilio toll-free (manual)**  
-   Resubmit or submit toll-free verification in Twilio Console; point reviewers to the live site. The site has app name, description, Privacy, Terms, SMS consent, and STOP language. Once approved: set production env `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` in Vercel, redeploy if needed, then test signup → verify email → verify phone → SMS on cover. See [current-status.md](current-status.md) and [feature-14-production-checklist.md](feature-14-production-checklist.md).
+1. **Commit and deploy current changes**
+   - Commit all branding/compliance/Sentry updates and push to `main`.
+   - Confirm Vercel deployment succeeds.
 
-2. **Next feature (from product)**  
-   **Feature 7 (Admin)** — Admin role; GET /api/shifts return all shifts; admin POST/PATCH/DELETE; /admin UI when `user.role === 'admin'`. **Feature 8 (Calendar sync)** — GET /api/me/calendar (authenticated .ics feed); “Copy feed URL” in Account. See [docs/todo.md](todo.md).
+2. **Finalize Sentry activation**
+   - In Vercel set: `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_ORG=shift-swap`, `SENTRY_PROJECT=javascript-nextjs`, and optional `SENTRY_AUTH_TOKEN`.
+   - Redeploy and verify via `/bug-report` submission and Sentry Issues.
 
-3. **Optional**  
-   Review/customize draft text in `src/app/privacy/page.tsx` and `src/app/terms/page.tsx` (contact and legal wording) as needed for your organization.
+3. **Complete Twilio toll-free resubmission**
+   - Ensure domain mailbox/forwarding works for `sean@hcmcshiftswap.com`.
+   - Update Twilio Business Profile + submission fields to match **ShiftSwap** branding.
+   - Add explicit explanation: product brand is ShiftSwap; `hcmcshiftswap.com` is the HCMC-specific deployment.
+   - Resubmit and share verification link with Twilio support contact.
+
+4. **After toll-free approval**
+   - Set/verify `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` in Vercel.
+   - Run production verification flow test end-to-end.
 
 ---
 
@@ -54,9 +75,13 @@ ShiftSwapper operates **separately** from the company’s UKG scheduling system.
 | Signup | `src/app/signup/page.tsx`, `src/lib/validation.ts` |
 | Verify-email redirect | `src/app/api/auth/verify-email/route.ts` |
 | Account + phone | `src/app/account/page.tsx`, PATCH `src/app/api/me/route.ts` |
+| About/Privacy/Terms | `src/app/about/page.tsx`, `src/app/privacy/page.tsx`, `src/app/terms/page.tsx` |
 | Footer | `src/components/Footer.tsx` |
-| Privacy / Terms | `src/app/privacy/page.tsx`, `src/app/terms/page.tsx` |
-| SMS | `src/lib/sms.ts`; cover: `src/app/api/shifts/[id]/cover/route.ts` |
-| Status & next steps | [current-status.md](current-status.md) |
+| SMS | `src/lib/sms.ts`; cover route: `src/app/api/shifts/[id]/cover/route.ts` |
+| Email templates | `src/lib/email.ts` |
+| Sentry config | `sentry.client.config.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts`, `src/instrumentation.ts`, `next.config.ts` |
+| Error boundaries | `src/app/error.tsx`, `src/app/global-error.tsx`, `src/app/calendar/error.tsx`, `src/app/account/error.tsx` |
+| Bug report | `src/app/bug-report/page.tsx`, `src/app/api/bug-report/route.ts` |
+| Execution checklist | [todo.md](todo.md) |
+| Status doc | [current-status.md](current-status.md) |
 | Toll-free checklist | [toll-free-sms-compliance.md](toll-free-sms-compliance.md) |
-| Full execution list | [todo.md](todo.md) |

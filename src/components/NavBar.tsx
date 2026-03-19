@@ -17,7 +17,7 @@ export function NavBar() {
         <Link href="/" className="flex items-center shrink-0">
           <img
             src="/shift-swapper-logo.svg"
-            alt="Shift Swapper"
+            alt="ShiftSwap"
             className="h-12 w-auto"
           />
         </Link>
@@ -51,6 +51,11 @@ export function NavBar() {
               <li>
                 <Link href="/account" className={linkClass}>
                   Account
+                </Link>
+              </li>
+              <li>
+                <Link href="/bug-report" className={linkClass}>
+                  Report a Bug
                 </Link>
               </li>
               <li>
