@@ -6,7 +6,7 @@ import { SessionProvider } from "@/components/SessionProvider";
 import { VerificationGate } from "@/components/VerificationGate";
 
 export const metadata: Metadata = {
-  title: "ShiftSwapper",
+  title: "ShiftSwap",
   description: "Post and pick up pharmacy shifts",
 };
 

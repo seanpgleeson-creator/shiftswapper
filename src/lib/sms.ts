@@ -38,7 +38,7 @@ export async function sendCoverSms(
     payload.covererPhone?.trim() ?
       ` You can reach them at ${payload.covererPhone.trim()}.`
     : "";
-  const body = `${payload.covererName} has covered your shift.${phoneLine} Please send this shift officially in UKG to complete the swap. — ShiftSwapper`;
+  const body = `${payload.covererName} has covered your shift.${phoneLine} Please send this shift officially in UKG to complete the swap. — ShiftSwap`;
 
   try {
     await client.messages.create({
@@ -73,7 +73,7 @@ export async function sendPhoneVerificationCode(
     return { ok: false, error: "No phone number" };
   }
   const toE164 = to.includes("+") ? to : `+1${to.replace(/\D/g, "")}`;
-  const body = `Your ShiftSwapper verification code is: ${code}. It expires in 10 minutes.`;
+  const body = `Your ShiftSwap verification code is: ${code}. It expires in 10 minutes.`;
   try {
     await client.messages.create({
       body,

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 
-const ALLOWED_PATHS = ["/login", "/signup", "/check-email", "/verify-phone"];
+const ALLOWED_PATHS = ["/login", "/signup", "/check-email", "/verify-phone", "/about", "/privacy", "/terms"];
 
 function isAllowed(path: string) {
   return ALLOWED_PATHS.some((p) => path === p || path.startsWith(p + "?"));

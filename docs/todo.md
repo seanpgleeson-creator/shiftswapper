@@ -359,7 +359,7 @@ Site updates for toll-free verification are implemented. Use this list to ship a
 
 ### Deploy and review
 
-- [x] Deploy compliance changes to production: `/privacy`, `/terms`, footer (ShiftSwapper + Privacy + Terms links), and updated SMS disclosure/opt-out copy on signup and Account.
+- [x] Deploy compliance changes to production: `/privacy`, `/terms`, footer (ShiftSwap + Privacy + Terms links), and updated SMS disclosure/opt-out copy on signup and Account.
 - [x] Review and customize draft text on `/privacy` and `/terms` for your organization (contact email, legal wording). Drafts are live; edit the page content in `src/app/privacy/page.tsx` and `src/app/terms/page.tsx` as needed. See [docs/toll-free-sms-compliance.md](toll-free-sms-compliance.md).
 
 ### Toll-free verification and SMS (manual)
@@ -368,6 +368,58 @@ Site updates for toll-free verification are implemented. Use this list to ship a
 - [ ] **Once Twilio toll-free is approved:** In Vercel, set production env vars (`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`), redeploy if needed, then test: signup with SMS opted in → verify email → verify phone → receive SMS on cover. See [current-status.md](current-status.md) and [feature-14-production-checklist.md](feature-14-production-checklist.md).
 
 ---
+
+## Feature 15: Sentry and bug reporting
+
+### Sentry SDK
+
+- [x] Install `@sentry/nextjs` and create `sentry.client.config.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts`.
+- [x] Wrap `next.config.ts` with `withSentryConfig()` for auto-instrumentation and source map uploads.
+- [x] Add `src/instrumentation.ts` to load server/edge Sentry configs at startup.
+- [x] Add env vars to `.env.example`: `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`.
+
+### Error boundaries
+
+- [x] `src/app/error.tsx` — root-level catch-all; reports to Sentry, shows "Something went wrong" with Try again / Back to home.
+- [x] `src/app/global-error.tsx` — catches errors in root layout; wraps its own `<html>`/`<body>`.
+- [x] `src/app/calendar/error.tsx` — calendar-specific: "We couldn't load the shift calendar."
+- [x] `src/app/account/error.tsx` — account-specific: "We couldn't load your account."
+
+### Bug report form
+
+- [x] `POST /api/bug-report` — session required; Zod validation (`description` min 10 chars, optional `category`); logs to console and sends `Sentry.captureMessage` with user context. Returns 201.
+- [x] `/bug-report` page — description textarea, category select (posting, calendar, account/SMS, other), non-blocking submit with spinner, green confirmation on success.
+- [x] "Report a Bug" link in NavBar (authenticated only, same `linkClass` styling, between Account and Log out).
+
+### Setup (manual)
+
+- [ ] **Create a Sentry project:** In [sentry.io](https://sentry.io), create a Next.js project. Copy the DSN.
+- [ ] **Set env vars in Vercel:** `NEXT_PUBLIC_SENTRY_DSN` (the DSN), `SENTRY_AUTH_TOKEN` (org auth token for source maps), `SENTRY_ORG`, `SENTRY_PROJECT`. Redeploy.
+- [ ] **Verify:** Trigger a test error (e.g. throw in a page) and confirm it appears in Sentry. Submit a bug report and confirm the message appears in Sentry.
+
+---
+
+## Next steps: Toll-free verification fixes (Brand identity)
+
+### Site updates completed
+
+- [x] Rebrand user-facing product name from **ShiftSwapper** to **ShiftSwap** across app UI copy, email/SMS templates, and calendar descriptions.
+- [x] Add public **/about** page with service description, operator details, and visible contact info.
+- [x] Add **About** link to footer and update footer operator line to "Built and operated by Sean Gleeson."
+- [x] Update Privacy Policy and Terms to ShiftSwap branding, domain contact email, mailing address, and phone.
+- [x] Remove "draft" wording from policy pages to present a production-ready compliance posture.
+- [x] Ensure `/about`, `/privacy`, and `/terms` are always reachable by adding them to `VerificationGate` allowed paths.
+
+### Manual actions required
+
+- [ ] Set up domain mailbox/forwarding for **sean@hcmcshiftswap.com** (or equivalent) and confirm mail delivery.
+- [ ] Update Twilio Business Profile and Toll-Free Verification submission:
+  - DBA / brand: **ShiftSwap**
+  - Website: `https://www.hcmcshiftswap.com`
+  - Contact email: **sean@hcmcshiftswap.com**
+  - Additional information: explain that ShiftSwap is the product brand and `hcmcshiftswap.com` is the HCMC-specific deployment.
+- [ ] Resubmit the toll-free verification and share the new verification link with Twilio support.
+
 
 ## Parallel Work Summary
 

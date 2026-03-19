@@ -209,7 +209,7 @@ export default function AccountPage() {
       <section className="mt-8 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-lg font-medium text-slate-800 mb-2">SMS notifications</h2>
         <p className="text-sm text-slate-600 mb-4">
-          Receive a text when someone covers your shift. By providing your phone number, you consent to receive SMS notifications from ShiftSwapper. Message &amp; data rates may apply. Reply STOP to unsubscribe. You can change this anytime in Account.
+          Receive a text when someone covers your shift. By providing your phone number, you consent to receive SMS notifications from ShiftSwap. Message &amp; data rates may apply. Reply STOP to unsubscribe. You can change this anytime in Account.
         </p>
         <label className="flex gap-3 items-start cursor-pointer">
           <input

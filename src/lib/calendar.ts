@@ -50,7 +50,7 @@ export function buildGoogleCalendarUrl(
     action: "TEMPLATE",
     text: `Pharmacy Shift - ${shift.location} (${shift.role})`,
     dates: `${startUtc}/${endUtc}`,
-    details: `Covered via ShiftSwapper. Originally posted by ${shift.posterName}.`,
+    details: `Covered via ShiftSwap. Originally posted by ${shift.posterName}.`,
     location: shift.location,
   });
   return `${base}?${params.toString()}`;
