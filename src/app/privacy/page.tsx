@@ -91,8 +91,8 @@ export default function PrivacyPage() {
           <h2 className="text-lg font-medium text-slate-800 mt-6 mb-2">6. Contact</h2>
           <p>
             For questions about this Privacy Policy or to request access, correction, or deletion of your data, contact us at{" "}
-            <a href="mailto:sean@hcmcshiftswap.com" className="text-blue-600 hover:text-blue-800">
-              sean@hcmcshiftswap.com
+            <a href="mailto:sean.gleeson@hcmcshiftswap.com" className="text-blue-600 hover:text-blue-800">
+              sean.gleeson@hcmcshiftswap.com
             </a>
             .
           </p>

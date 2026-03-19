@@ -46,7 +46,7 @@ export default function UpcomingFeaturesPage() {
       <p className="text-slate-600 text-sm border-t border-slate-200 pt-6">
         Have an idea?{" "}
         <a
-          href="mailto:sean@hcmcshiftswap.com?subject=ShiftSwap%20Feature%20Request"
+          href="mailto:sean.gleeson@hcmcshiftswap.com?subject=ShiftSwap%20Feature%20Request"
           className="text-blue-600 hover:text-blue-800 font-medium underline underline-offset-2"
         >
           Request a feature
