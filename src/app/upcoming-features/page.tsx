@@ -7,18 +7,6 @@ export default function UpcomingFeaturesPage() {
       </p>
       <ul className="space-y-5 text-slate-700 mb-10">
         <li>
-          <strong className="text-slate-800">User Accounts</strong>
-          <span className="block text-slate-600 text-sm mt-0.5">
-            Sign in with your own account to manage your posted and covered shifts in one place.
-          </span>
-        </li>
-        <li>
-          <strong className="text-slate-800">Remove Posted Shift</strong>
-          <span className="block text-slate-600 text-sm mt-0.5">
-            Remove or cancel a shift you posted (e.g., you no longer need coverage). Requires sign-in.
-          </span>
-        </li>
-        <li>
           <strong className="text-slate-800">Role and Location Restrictions</strong>
           <span className="block text-slate-600 text-sm mt-0.5">
             Ensure only team members approved for a specific role or location can pick up those shifts.

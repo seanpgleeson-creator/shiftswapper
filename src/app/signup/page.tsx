@@ -199,36 +199,15 @@ export default function SignupPage() {
           )}
         </div>
         <div>
-          <label htmlFor="phone" className="block text-sm font-medium text-slate-700 mb-1">
-            Phone {form.sms_consent ? <span className="text-red-500">*</span> : <span className="text-slate-400">(optional)</span>}
-          </label>
-          <input
-            id="phone"
-            type="tel"
-            value={form.phone}
-            onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
-            className={`block w-full rounded-md border px-3 py-2 text-slate-900 shadow-sm focus:ring-2 focus:ring-blue-500 ${
-              errors.phone ? "border-red-500" : "border-slate-300"
-            }`}
-            placeholder={form.sms_consent ? "Required for SMS" : "For SMS when your shift is covered"}
-          />
-          {!form.sms_consent && (
-            <p className="mt-1 text-xs text-slate-500">If you add a phone number, you must opt in to SMS below.</p>
-          )}
-          {errors.phone && (
-            <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600">
-              <ErrorIcon className="flex-shrink-0 mt-0.5" />
-              {errors.phone}
-            </p>
-          )}
-        </div>
-        <div>
           <label className="flex gap-3 items-start cursor-pointer">
             <input
               type="checkbox"
               id="sms_consent"
               checked={form.sms_consent}
-              onChange={(e) => setForm((p) => ({ ...p, sms_consent: e.target.checked }))}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setForm((p) => ({ ...p, sms_consent: checked, ...(!checked && { phone: "" }) }));
+              }}
               className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
             />
             <span className="text-sm text-slate-700">
@@ -242,6 +221,29 @@ export default function SignupPage() {
             </p>
           )}
         </div>
+        {form.sms_consent && (
+          <div>
+            <label htmlFor="phone" className="block text-sm font-medium text-slate-700 mb-1">
+              Phone <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="phone"
+              type="tel"
+              value={form.phone}
+              onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
+              className={`block w-full rounded-md border px-3 py-2 text-slate-900 shadow-sm focus:ring-2 focus:ring-blue-500 ${
+                errors.phone ? "border-red-500" : "border-slate-300"
+              }`}
+              placeholder="Required for SMS"
+            />
+            {errors.phone && (
+              <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600">
+                <ErrorIcon className="flex-shrink-0 mt-0.5" />
+                {errors.phone}
+              </p>
+            )}
+          </div>
+        )}
         <div>
           <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">
             Password <span className="text-red-500">*</span>
