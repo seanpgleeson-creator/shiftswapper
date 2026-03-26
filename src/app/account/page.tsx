@@ -194,7 +194,7 @@ export default function AccountPage() {
                   <button
                     type="submit"
                     disabled={phoneSaving}
-                    className="min-h-[40px] rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                    className="min-h-[44px] rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
                   >
                     {phoneSaving ? "Saving…" : "Add phone"}
                   </button>
@@ -243,7 +243,7 @@ export default function AccountPage() {
               <button
                 type="submit"
                 disabled={codeVerifying || code.length !== 6}
-                className="min-h-[40px] rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                className="min-h-[44px] rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
               >
                 {codeVerifying ? "Verifying…" : "Verify"}
               </button>
@@ -251,7 +251,7 @@ export default function AccountPage() {
                 type="button"
                 onClick={handleSendCode}
                 disabled={codeSending}
-                className="min-h-[40px] rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                className="min-h-[44px] rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
               >
                 {codeSending ? "Sending…" : "Send code"}
               </button>

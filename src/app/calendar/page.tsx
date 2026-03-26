@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { formatTime, getMonthRange, formatShiftDate } from "@/lib/time";
 
 type Shift = {
   id: string;
@@ -16,21 +17,6 @@ type Shift = {
   posted_by_user_id?: string;
 };
 
-function formatTime(hhmm: string): string {
-  const [h, m] = hhmm.split(":").map(Number);
-  const period = h >= 12 ? "PM" : "AM";
-  const hour = h % 12 || 12;
-  return `${hour}:${m.toString().padStart(2, "0")} ${period}`;
-}
-
-function getMonthRange(year: number, month: number) {
-  const from = new Date(year, month, 1);
-  const to = new Date(year, month + 1, 0);
-  return {
-    from: from.toISOString().slice(0, 10),
-    to: to.toISOString().slice(0, 10),
-  };
-}
 
 function getCalendarDays(year: number, month: number) {
   const first = new Date(year, month, 1);
@@ -81,6 +67,49 @@ function getCellCalendarYMD(
   return { year: viewYear, month: viewMonth + 1, day };
 }
 
+const FOCUSABLE_SELECTORS =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+function useFocusTrap(active: boolean) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (!active || !ref.current) return;
+      if (e.key !== "Tab") return;
+      const focusable = Array.from(
+        ref.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS)
+      ).filter((el) => !el.closest("[aria-hidden='true']"));
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    },
+    [active]
+  );
+
+  useEffect(() => {
+    if (!active) return;
+    document.addEventListener("keydown", handleKeyDown);
+    // Move focus into the modal on open
+    const firstFocusable = ref.current?.querySelector<HTMLElement>(FOCUSABLE_SELECTORS);
+    firstFocusable?.focus();
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [active, handleKeyDown]);
+
+  return ref;
+}
+
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default function CalendarPage() {
@@ -94,6 +123,7 @@ export default function CalendarPage() {
   const [showCoverConfirm, setShowCoverConfirm] = useState(false);
   const [covererName, setCovererName] = useState("");
   const [covererEmail, setCovererEmail] = useState("");
+  const modalRef = useFocusTrap(!!detailShift);
   const isAuthenticated = !!session?.user;
   const sessionName = isAuthenticated ? (session?.user?.name ?? "You") : "";
   const userId = (session?.user as { id?: string } | undefined)?.id;
@@ -236,7 +266,7 @@ export default function CalendarPage() {
     <div className="max-w-6xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-semibold text-slate-800 mb-6">Browse Shifts</h1>
 
-      <div className="mb-6 flex flex-wrap items-center gap-4">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -437,6 +467,7 @@ export default function CalendarPage() {
           aria-labelledby="shift-detail-title"
         >
           <div
+            ref={modalRef}
             className="w-full max-w-md rounded-t-2xl sm:rounded-2xl bg-white p-6 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
@@ -509,7 +540,7 @@ export default function CalendarPage() {
                 <dl className="space-y-2 text-slate-700 mb-4">
                   <div>
                     <dt className="text-sm text-slate-500">Date</dt>
-                    <dd>{detailShift.shift_date}</dd>
+                    <dd>{formatShiftDate(detailShift.shift_date)}</dd>
                   </div>
                   <div>
                     <dt className="text-sm text-slate-500">Time</dt>
@@ -662,7 +693,7 @@ export default function CalendarPage() {
                 <dl className="space-y-2 text-slate-700">
                   <div>
                     <dt className="text-sm text-slate-500">Date</dt>
-                    <dd>{detailShift.shift_date}</dd>
+                    <dd>{formatShiftDate(detailShift.shift_date)}</dd>
                   </div>
                   <div>
                     <dt className="text-sm text-slate-500">Time</dt>

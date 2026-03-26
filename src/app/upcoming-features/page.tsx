@@ -13,12 +13,6 @@ export default function UpcomingFeaturesPage() {
           </span>
         </li>
         <li>
-          <strong className="text-slate-800">SMS/Text Notifications</strong>
-          <span className="block text-slate-600 text-sm mt-0.5">
-            Get text messages when your shift is covered or new shifts are posted at your location.
-          </span>
-        </li>
-        <li>
           <strong className="text-slate-800">Shift History</strong>
           <span className="block text-slate-600 text-sm mt-0.5">
             View a log of past shift swaps for your records.

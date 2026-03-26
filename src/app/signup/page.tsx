@@ -4,14 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
-
-function ErrorIcon({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={`h-5 w-5 text-red-600 ${className ?? ""}`} aria-hidden>
-      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-    </svg>
-  );
-}
+import { ErrorIcon } from "@/components/ErrorIcon";
 
 type FieldErrors = Record<string, string | undefined>;
 
@@ -125,7 +118,7 @@ export default function SignupPage() {
               }`}
             />
             {errors.first_name && (
-              <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600">
+              <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600" role="alert">
                 <ErrorIcon className="flex-shrink-0 mt-0.5" />
                 {errors.first_name}
               </p>
@@ -145,7 +138,7 @@ export default function SignupPage() {
               }`}
             />
             {errors.last_name && (
-              <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600">
+              <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600" role="alert">
                 <ErrorIcon className="flex-shrink-0 mt-0.5" />
                 {errors.last_name}
               </p>
@@ -166,7 +159,7 @@ export default function SignupPage() {
             }`}
           />
           {errors.email && (
-            <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600">
+            <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600" role="alert">
               <ErrorIcon className="flex-shrink-0 mt-0.5" />
               {errors.email}
             </p>
@@ -192,7 +185,7 @@ export default function SignupPage() {
             ))}
           </select>
           {errors.position && (
-            <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600">
+            <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600" role="alert">
               <ErrorIcon className="flex-shrink-0 mt-0.5" />
               {errors.position}
             </p>
@@ -215,7 +208,7 @@ export default function SignupPage() {
             </span>
           </label>
           {errors.sms_consent && (
-            <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600">
+            <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600" role="alert">
               <ErrorIcon className="flex-shrink-0 mt-0.5" />
               {errors.sms_consent}
             </p>
@@ -237,7 +230,7 @@ export default function SignupPage() {
               placeholder="Required for SMS"
             />
             {errors.phone && (
-              <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600">
+              <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600" role="alert">
                 <ErrorIcon className="flex-shrink-0 mt-0.5" />
                 {errors.phone}
               </p>
@@ -260,7 +253,7 @@ export default function SignupPage() {
           />
           <p className="mt-1 text-xs text-slate-500">At least 8 characters.</p>
           {errors.password && (
-            <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600">
+            <p className="mt-1 flex items-start gap-1.5 text-sm text-red-600" role="alert">
               <ErrorIcon className="flex-shrink-0 mt-0.5" />
               {errors.password}
             </p>
@@ -274,7 +267,7 @@ export default function SignupPage() {
             !form.last_name.trim() ||
             !form.email.trim() ||
             !form.position ||
-            !form.password ||
+            form.password.length < 8 ||
             (form.sms_consent && (form.phone.trim().length < 10 || !/^[\d\s\-+()]{10,}$/.test(form.phone.trim())))
           }
           className="w-full min-h-[44px] rounded-md bg-blue-600 px-4 py-2.5 font-medium text-white shadow-sm hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none"

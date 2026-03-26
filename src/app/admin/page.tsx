@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { formatTime, getMonthRange } from "@/lib/time";
 
 type Shift = {
   id: string;
@@ -17,21 +18,6 @@ type Shift = {
   created_at: string;
 };
 
-function getMonthRange(year: number, month: number) {
-  const from = new Date(year, month, 1);
-  const to = new Date(year, month + 1, 0);
-  return {
-    from: from.toISOString().slice(0, 10),
-    to: to.toISOString().slice(0, 10),
-  };
-}
-
-function formatTime(hhmm: string): string {
-  const [h, m] = hhmm.split(":").map(Number);
-  const period = h >= 12 ? "PM" : "AM";
-  const hour = h % 12 || 12;
-  return `${hour}:${m.toString().padStart(2, "0")} ${period}`;
-}
 
 export default function AdminPage() {
   const router = useRouter();
@@ -428,9 +414,9 @@ export default function AdminPage() {
       )}
 
       {removeConfirm && (
-        <div className="fixed inset-0 z-10 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 z-10 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="admin-remove-dialog-title">
           <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <h2 className="text-lg font-semibold text-slate-800 mb-2">
+            <h2 id="admin-remove-dialog-title" className="text-lg font-semibold text-slate-800 mb-2">
               {removeConfirm.status === "open" ? "Cancel this shift?" : "Remove this shift from the list?"}
             </h2>
             <p className="text-slate-600 text-sm mb-4">

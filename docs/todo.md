@@ -443,3 +443,40 @@ Site updates for toll-free verification are implemented. Use this list to ship a
 | **Feature 14: Email and phone verification** | Backend (email/phone verify endpoints, DB columns) \| Frontend (verify-email state, verify-phone screen, access gate) |
 
 Sequence remains feature-driven: finish each feature end-to-end and verify in production before moving to the next.
+
+---
+
+## Design Fixes (from /audit)
+
+See [docs/design-audit.md](design-audit.md) for full findings, recommendations, and suggested commands.
+
+### P1 — Fix before release
+
+- [x] **[DESIGN] [P1]** Modal focus trap not implemented — focus escapes the shift detail overlay for keyboard users — `src/app/calendar/page.tsx`
+- [x] **[DESIGN] [P1]** No font declared — app renders in browser default (no `font-sans`, no web font, empty `tailwind.config.ts` theme) — `src/app/layout.tsx`, `src/app/globals.css`
+- [x] **[DESIGN] [P1]** Admin confirm dialog missing `aria-labelledby` — screen readers announce dialog without a name — `src/app/admin/page.tsx`
+- [x] **[DESIGN] [P1]** No skip-to-content link — keyboard users must Tab through all nav items on every page load (WCAG 2.4.1) — `src/app/layout.tsx`
+- [x] **[DESIGN] [P1]** Inline field errors missing `role="alert"` — screen readers not notified when errors appear dynamically — `src/app/post/page.tsx`, `src/app/login/page.tsx`, `src/app/signup/page.tsx`, `src/app/verify-phone/page.tsx`
+- [x] **[DESIGN] [P1]** Password submit button does not check `password.length >= 8` — 1-character password is not blocked by client validation — `src/app/signup/page.tsx`
+
+### P2 — Fix in next pass
+
+- [x] **[DESIGN] [P2]** Calendar filter bar overflows on mobile — 10 location pills + role dropdown have no mobile layout strategy — `src/app/calendar/page.tsx`
+- [ ] **[DESIGN] [P2]** Calendar day cells may fall below 44px touch target on 320px screens — `aspect-square` + `gap-1` across 7 columns yields ~38px cells — `src/app/calendar/page.tsx`
+- [x] **[DESIGN] [P2]** `ErrorIcon` duplicated across 4 page files — extract to `src/components/ErrorIcon.tsx` — `post/page.tsx`, `login/page.tsx`, `signup/page.tsx`, `verify-phone/page.tsx`
+- [x] **[DESIGN] [P2]** `formatTime` and `getMonthRange` duplicated between calendar and admin pages — extract to `src/lib/time.ts`
+- [ ] **[DESIGN] [P2]** Calendar page is 721 lines with no component extraction — extract `ShiftDetailModal`, `CalendarGrid`, `FilterBar`, `ShiftListPanel` — `src/app/calendar/page.tsx`
+- [x] **[DESIGN] [P2]** Account phone action buttons below 44px touch target — `min-h-[40px]` should be `min-h-[44px]` — `src/app/account/page.tsx`
+- [ ] **[DESIGN] [P2]** NavBar has no mobile hamburger — nav wraps to 2–3 rows on 375px phones; PRD specifies hamburger collapse — `src/components/NavBar.tsx`
+- [x] **[DESIGN] [P2]** Shift date displayed as raw ISO string (`2026-03-26`) in shift detail and cover success views — `src/app/calendar/page.tsx`
+- [ ] **[DESIGN] [P2]** No loading skeletons — every async page shows plain "Loading…" text causing layout shift — `post/page.tsx`, `account/page.tsx`, `admin/page.tsx`, `calendar/page.tsx`, `VerificationGate.tsx`
+
+### P3 — Polish
+
+- [ ] **[DESIGN] [P3]** No dark mode support — `darkMode` not configured; all backgrounds hard-coded white/slate-50 — `tailwind.config.ts`, `src/app/globals.css`
+- [x] **[DESIGN] [P3]** Upcoming features page lists SMS as "upcoming" but it is already implemented (pending Twilio approval) — `src/app/upcoming-features/page.tsx`
+- [ ] **[DESIGN] [P3]** Redundant copy on landing page — `<h1>` restates the two card titles verbatim; three layers of the same content — `src/app/page.tsx`
+- [x] **[DESIGN] [P3]** No visible focus styles on nav links, calendar day buttons, and location pill buttons — Tailwind preflight removes default outline; no `focus-visible:ring` added — all pages
+- [x] **[DESIGN] [P3]** `prose` class used without `@tailwindcss/typography` plugin installed — has no effect; plugin missing from `tailwind.config.ts` — `src/app/privacy/page.tsx`, `src/app/terms/page.tsx`
+- [ ] **[DESIGN] [P3]** Admin table has no mobile-friendly layout — 8-column table is unusable on phones; needs card view or "desktop only" notice — `src/app/admin/page.tsx`
+- [x] **[DESIGN] [P3]** Global error boundary may be missing `lang="en"` on its own `<html>` element — `src/app/global-error.tsx`
