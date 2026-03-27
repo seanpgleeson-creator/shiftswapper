@@ -56,6 +56,40 @@ export async function sendCoverSms(
 }
 
 /**
+ * Send password reset code via SMS.
+ * If Twilio is not configured, skips send and returns { ok: false, error }.
+ */
+export async function sendPasswordResetSms(
+  phone: string,
+  code: string
+): Promise<{ ok: boolean; error?: string }> {
+  if (!client || !fromNumber) {
+    const msg = "Twilio not configured; skipping password reset SMS";
+    console.warn("[ResetSMS]", msg);
+    return { ok: false, error: "SMS not configured" };
+  }
+  const to = phone.trim();
+  if (!to) {
+    return { ok: false, error: "No phone number" };
+  }
+  const toE164 = to.includes("+") ? to : `+1${to.replace(/\D/g, "")}`;
+  const body = `Your ShiftSwap password reset code is: ${code}. It expires in 15 minutes. If you did not request this, ignore this message.`;
+  try {
+    await client.messages.create({
+      body,
+      from: fromNumber,
+      to: toE164,
+    });
+    console.info("[ResetSMS] Sent code to", toE164);
+    return { ok: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[ResetSMS] Twilio error:", message);
+    return { ok: false, error: message };
+  }
+}
+
+/**
  * Send 6-digit verification code via SMS (e.g. for phone verification at signup).
  * If Twilio is not configured, skips send and returns { ok: false, error }.
  */

@@ -27,6 +27,9 @@ model User {
   emailVerificationExpiresAt DateTime? @map("email_verification_expires_at")
   phoneVerificationCode    String?   @map("phone_verification_code")
   phoneVerificationExpiresAt DateTime? @map("phone_verification_expires_at")
+  passwordResetToken       String?   @map("password_reset_token")
+  passwordResetExpiresAt   DateTime? @map("password_reset_expires_at")
+  passwordResetMethod      String?   @map("password_reset_method")
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
