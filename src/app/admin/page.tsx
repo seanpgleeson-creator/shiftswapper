@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { formatTime, getMonthRange } from "@/lib/time";
+import { ROLES } from "@/lib/constants";
 
 type Shift = {
   id: string;
@@ -18,11 +19,27 @@ type Shift = {
   created_at: string;
 };
 
+type User = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string | null;
+  position: string;
+  role: string;
+  emailVerified: boolean;
+  phoneVerified: boolean;
+  createdAt: string;
+};
+
 
 export default function AdminPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const today = useMemo(() => new Date(), []);
+  const [activeTab, setActiveTab] = useState<"shifts" | "users">("shifts");
+
+  // Shifts state
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [shifts, setShifts] = useState<Shift[]>([]);
@@ -33,6 +50,17 @@ export default function AdminPage() {
   const [removeError, setRemoveError] = useState<string | null>(null);
   const [locations, setLocations] = useState<string[]>([]);
   const [roles, setRoles] = useState<string[]>([]);
+
+  // Users state
+  const [users, setUsers] = useState<User[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [editUser, setEditUser] = useState<User | null>(null);
+  const [editForm, setEditForm] = useState({ firstName: "", lastName: "", email: "", phone: "", position: "", role: "", password: "" });
+  const [editErrors, setEditErrors] = useState<Record<string, string>>({});
+  const [editSubmitting, setEditSubmitting] = useState(false);
+  const [deleteConfirmUser, setDeleteConfirmUser] = useState<User | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const [addForm, setAddForm] = useState({
     poster_name: "",
@@ -88,6 +116,82 @@ export default function AdminPage() {
     if (!isAdmin) return;
     refetch();
   }, [isAdmin, from, to]);
+
+  function fetchUsers() {
+    if (!isAdmin) return;
+    setUsersLoading(true);
+    fetch("/api/admin/users")
+      .then((r) => r.json())
+      .then((data) => setUsers(data.users ?? []))
+      .finally(() => setUsersLoading(false));
+  }
+
+  useEffect(() => {
+    if (!isAdmin || activeTab !== "users") return;
+    fetchUsers();
+  }, [isAdmin, activeTab]);
+
+  function openEditUser(user: User) {
+    setEditUser(user);
+    setEditForm({ firstName: user.firstName, lastName: user.lastName, email: user.email, phone: user.phone ?? "", position: user.position, role: user.role, password: "" });
+    setEditErrors({});
+  }
+
+  async function handleEditSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editUser) return;
+    const err: Record<string, string> = {};
+    if (!editForm.firstName.trim()) err.firstName = "Required";
+    if (!editForm.lastName.trim()) err.lastName = "Required";
+    if (!editForm.email.trim()) err.email = "Required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editForm.email)) err.email = "Invalid email";
+    setEditErrors(err);
+    if (Object.keys(err).length > 0) return;
+
+    setEditSubmitting(true);
+    try {
+      const res = await fetch(`/api/admin/users/${editUser.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName: editForm.firstName,
+          lastName: editForm.lastName,
+          email: editForm.email,
+          phone: editForm.phone,
+          position: editForm.position,
+          role: editForm.role,
+          ...(editForm.password ? { password: editForm.password } : {}),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setEditErrors({ submit: data.error ?? "Failed to update user" });
+        return;
+      }
+      setEditUser(null);
+      fetchUsers();
+    } finally {
+      setEditSubmitting(false);
+    }
+  }
+
+  async function confirmDeleteUser() {
+    if (!deleteConfirmUser) return;
+    setDeleteLoading(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch(`/api/admin/users/${deleteConfirmUser.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setDeleteError((data as { error?: string }).error ?? "Failed to delete user");
+        return;
+      }
+      setDeleteConfirmUser(null);
+      fetchUsers();
+    } finally {
+      setDeleteLoading(false);
+    }
+  }
 
   async function handleAddSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -194,8 +298,217 @@ export default function AdminPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-semibold text-slate-800 mb-6">Admin – All Shifts</h1>
+      <h1 className="text-2xl font-semibold text-slate-800 mb-6">Admin</h1>
 
+      {/* Tabs */}
+      <div className="mb-6 flex border-b border-slate-200">
+        <button
+          type="button"
+          onClick={() => setActiveTab("shifts")}
+          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${activeTab === "shifts" ? "border-blue-600 text-blue-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
+        >
+          Shifts
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("users")}
+          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${activeTab === "users" ? "border-blue-600 text-blue-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
+        >
+          Users
+        </button>
+      </div>
+
+      {activeTab === "users" && (
+        <div>
+          {usersLoading ? (
+            <p className="text-slate-600">Loading users…</p>
+          ) : users.length === 0 ? (
+            <p className="text-slate-600">No users found.</p>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border border-slate-200">
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Name</th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Email</th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Phone</th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Position</th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Role</th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Verified</th>
+                    <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 bg-white">
+                  {users.map((u) => (
+                    <tr key={u.id}>
+                      <td className="px-4 py-3 text-sm text-slate-800">{u.firstName} {u.lastName}</td>
+                      <td className="px-4 py-3 text-sm text-slate-800">{u.email}</td>
+                      <td className="px-4 py-3 text-sm text-slate-600">{u.phone ?? "—"}</td>
+                      <td className="px-4 py-3 text-sm text-slate-800">{u.position}</td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${u.role === "admin" ? "bg-purple-100 text-purple-800" : "bg-slate-100 text-slate-700"}`}>
+                          {u.role}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-slate-600">
+                        {u.emailVerified ? "✓ Email" : "✗ Email"}
+                      </td>
+                      <td className="px-4 py-3 text-right flex justify-end gap-3">
+                        <button
+                          type="button"
+                          onClick={() => openEditUser(u)}
+                          className="text-sm font-medium text-blue-600 hover:text-blue-800 min-h-[44px] flex items-center"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setDeleteConfirmUser(u); setDeleteError(null); }}
+                          className="text-sm font-medium text-red-600 hover:text-red-800 min-h-[44px] flex items-center"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Edit User Modal */}
+          {editUser && (
+            <div className="fixed inset-0 z-10 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="edit-user-dialog-title">
+              <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto">
+                <h2 id="edit-user-dialog-title" className="text-lg font-semibold text-slate-800 mb-4">Edit User</h2>
+                <form onSubmit={handleEditSubmit} className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">First name</label>
+                    <input
+                      type="text"
+                      value={editForm.firstName}
+                      onChange={(e) => setEditForm((f) => ({ ...f, firstName: e.target.value }))}
+                      className={`w-full rounded-md border px-3 py-2 text-slate-800 min-h-[44px] ${editErrors.firstName ? "border-red-500" : "border-slate-300"}`}
+                    />
+                    {editErrors.firstName && <p className="mt-1 text-sm text-red-600">{editErrors.firstName}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Last name</label>
+                    <input
+                      type="text"
+                      value={editForm.lastName}
+                      onChange={(e) => setEditForm((f) => ({ ...f, lastName: e.target.value }))}
+                      className={`w-full rounded-md border px-3 py-2 text-slate-800 min-h-[44px] ${editErrors.lastName ? "border-red-500" : "border-slate-300"}`}
+                    />
+                    {editErrors.lastName && <p className="mt-1 text-sm text-red-600">{editErrors.lastName}</p>}
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                    <input
+                      type="email"
+                      value={editForm.email}
+                      onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))}
+                      className={`w-full rounded-md border px-3 py-2 text-slate-800 min-h-[44px] ${editErrors.email ? "border-red-500" : "border-slate-300"}`}
+                    />
+                    {editErrors.email && <p className="mt-1 text-sm text-red-600">{editErrors.email}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
+                    <input
+                      type="tel"
+                      value={editForm.phone}
+                      onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))}
+                      className="w-full rounded-md border border-slate-300 px-3 py-2 text-slate-800 min-h-[44px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Position</label>
+                    <select
+                      value={editForm.position}
+                      onChange={(e) => setEditForm((f) => ({ ...f, position: e.target.value }))}
+                      className="w-full rounded-md border border-slate-300 px-3 py-2 text-slate-800 min-h-[44px]"
+                    >
+                      {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">App role</label>
+                    <select
+                      value={editForm.role}
+                      onChange={(e) => setEditForm((f) => ({ ...f, role: e.target.value }))}
+                      className="w-full rounded-md border border-slate-300 px-3 py-2 text-slate-800 min-h-[44px]"
+                    >
+                      <option value="member">member</option>
+                      <option value="admin">admin</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">New password <span className="text-slate-400 font-normal">(leave blank to keep)</span></label>
+                    <input
+                      type="password"
+                      value={editForm.password}
+                      onChange={(e) => setEditForm((f) => ({ ...f, password: e.target.value }))}
+                      placeholder="••••••••"
+                      className="w-full rounded-md border border-slate-300 px-3 py-2 text-slate-800 min-h-[44px]"
+                    />
+                  </div>
+                  {editErrors.submit && <p className="sm:col-span-2 text-sm text-red-600">{editErrors.submit}</p>}
+                  <div className="sm:col-span-2 flex gap-3">
+                    <button
+                      type="submit"
+                      disabled={editSubmitting}
+                      className="min-h-[44px] rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {editSubmitting ? "Saving…" : "Save changes"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditUser(null)}
+                      className="min-h-[44px] rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* Delete User Confirm Modal */}
+          {deleteConfirmUser && (
+            <div className="fixed inset-0 z-10 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="delete-user-dialog-title">
+              <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+                <h2 id="delete-user-dialog-title" className="text-lg font-semibold text-slate-800 mb-2">Delete this user?</h2>
+                <p className="text-slate-600 text-sm mb-4">
+                  {deleteConfirmUser.firstName} {deleteConfirmUser.lastName} ({deleteConfirmUser.email}) will be permanently deleted. This cannot be undone.
+                </p>
+                {deleteError && <p className="mb-3 text-sm text-red-600">{deleteError}</p>}
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={confirmDeleteUser}
+                    disabled={deleteLoading}
+                    className="flex-1 min-h-[44px] rounded-md bg-red-600 px-4 py-2 font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                  >
+                    {deleteLoading ? "Deleting…" : "Delete user"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setDeleteConfirmUser(null); setDeleteError(null); }}
+                    disabled={deleteLoading}
+                    className="flex-1 min-h-[44px] rounded-md border border-slate-300 bg-white px-4 py-2 font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === "shifts" && (
+      <div>
       <div className="mb-6 flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-2">
           <button
@@ -443,6 +756,8 @@ export default function AdminPage() {
             </div>
           </div>
         </div>
+      )}
+      </div>
       )}
     </div>
   );

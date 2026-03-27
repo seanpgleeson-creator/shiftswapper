@@ -62,8 +62,7 @@ function VerifyPhoneContent() {
         setError(data.error ?? "Verification failed.");
         return;
       }
-      router.push("/calendar");
-      router.refresh();
+      window.location.href = "/calendar";
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {

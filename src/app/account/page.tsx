@@ -14,6 +14,7 @@ type Me = {
   phone_verified?: boolean;
 };
 
+
 export default function AccountPage() {
   const { data: session, status } = useSession();
   const [me, setMe] = useState<Me | null>(null);
@@ -28,6 +29,11 @@ export default function AccountPage() {
   const [phoneInput, setPhoneInput] = useState("");
   const [phoneSaving, setPhoneSaving] = useState(false);
   const [phoneError, setPhoneError] = useState<string | null>(null);
+
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
 
   useEffect(() => {
     if (status !== "authenticated") {
@@ -134,6 +140,42 @@ export default function AccountPage() {
       setCodeError("Something went wrong.");
     } finally {
       setCodeVerifying(false);
+    }
+  }
+
+  async function handleChangePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setPasswordError(null);
+    setPasswordSuccess(false);
+    if (passwordForm.newPassword.length < 8) {
+      setPasswordError("New password must be at least 8 characters.");
+      return;
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError("New passwords do not match.");
+      return;
+    }
+    setPasswordSaving(true);
+    try {
+      const res = await fetch("/api/me/password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setPasswordError(data.error ?? "Failed to update password.");
+        return;
+      }
+      setPasswordSuccess(true);
+      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    } catch {
+      setPasswordError("Something went wrong.");
+    } finally {
+      setPasswordSaving(false);
     }
   }
 
@@ -259,6 +301,73 @@ export default function AccountPage() {
             {codeError && <p className="mt-2 text-sm text-red-600">{codeError}</p>}
           </div>
         )}
+      </section>
+
+      <section className="mt-8 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-medium text-slate-800 mb-4">Change password</h2>
+        {passwordSuccess && (
+          <div className="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-green-800 text-sm">
+            Password updated successfully.
+          </div>
+        )}
+        {passwordError && (
+          <div className="mb-4 rounded-md border border-red-300 bg-red-50 px-4 py-3 text-red-800 text-sm">
+            {passwordError}
+          </div>
+        )}
+        <form onSubmit={handleChangePassword} className="space-y-4">
+          <div>
+            <label htmlFor="current-password" className="block text-sm font-medium text-slate-700 mb-1">
+              Current password
+            </label>
+            <input
+              id="current-password"
+              type="password"
+              value={passwordForm.currentPassword}
+              onChange={(e) => setPasswordForm((f) => ({ ...f, currentPassword: e.target.value }))}
+              required
+              autoComplete="current-password"
+              className="block w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label htmlFor="new-password" className="block text-sm font-medium text-slate-700 mb-1">
+              New password
+            </label>
+            <input
+              id="new-password"
+              type="password"
+              value={passwordForm.newPassword}
+              onChange={(e) => setPasswordForm((f) => ({ ...f, newPassword: e.target.value }))}
+              required
+              autoComplete="new-password"
+              minLength={8}
+              className="block w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:ring-2 focus:ring-blue-500"
+            />
+            <p className="mt-1 text-xs text-slate-500">Minimum 8 characters</p>
+          </div>
+          <div>
+            <label htmlFor="confirm-new-password" className="block text-sm font-medium text-slate-700 mb-1">
+              Confirm new password
+            </label>
+            <input
+              id="confirm-new-password"
+              type="password"
+              value={passwordForm.confirmPassword}
+              onChange={(e) => setPasswordForm((f) => ({ ...f, confirmPassword: e.target.value }))}
+              required
+              autoComplete="new-password"
+              className="block w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={passwordSaving}
+            className="min-h-[44px] rounded-md bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none"
+          >
+            {passwordSaving ? "Saving…" : "Update password"}
+          </button>
+        </form>
       </section>
 
       <p className="mt-6 text-slate-600 text-sm">

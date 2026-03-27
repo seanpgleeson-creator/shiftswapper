@@ -115,6 +115,29 @@ export async function sendVerificationEmail(
   }
 }
 
+export async function sendPasswordResetEmail(
+  to: string,
+  resetUrl: string
+): Promise<{ ok: boolean; error?: string }> {
+  if (!resend) {
+    console.warn("RESEND_API_KEY not set; skipping password reset email");
+    return { ok: false, error: "Email not configured" };
+  }
+  try {
+    const res = await resend.emails.send({
+      from: fromEmail,
+      to,
+      subject: "Reset your password — ShiftSwap",
+      text: `You requested a password reset for your ShiftSwap account.\n\nClick the link below to set a new password. This link expires in 15 minutes.\n\n${resetUrl}\n\nIf you did not request a password reset, you can safely ignore this email.\n\n— ShiftSwap`,
+    });
+    return { ok: res.data != null, error: res.error?.message };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Failed to send password reset email";
+    console.error("Password reset email send failed:", e);
+    return { ok: false, error: message };
+  }
+}
+
 export async function sendSignupNotificationToAdmin(
   adminEmail: string,
   user: { firstName: string; lastName: string; email: string; position: string }
