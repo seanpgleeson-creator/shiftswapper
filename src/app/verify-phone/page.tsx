@@ -22,6 +22,9 @@ function VerifyPhoneContent() {
       router.replace("/login?next=/verify-phone");
       return;
     }
+    if (status === "authenticated") {
+      handleSendCode();
+    }
   }, [status, router]);
 
   async function handleSendCode() {
@@ -89,7 +92,7 @@ function VerifyPhoneContent() {
         <p className="text-green-700 text-sm mb-4">Email verified. Now enter the code we sent to your phone.</p>
       )}
       <p className="text-slate-600 mb-6">
-        We sent a 6-digit code to your phone. Enter it below.
+        We&apos;re sending a 6-digit code to your phone. Enter it below when it arrives.
       </p>
       {error && (
         <div className="mb-6 flex gap-2 rounded-md border border-red-300 bg-red-50 px-4 py-3 text-red-800 text-sm" role="alert">
