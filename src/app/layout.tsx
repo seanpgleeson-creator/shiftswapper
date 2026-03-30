@@ -4,6 +4,7 @@ import { NavBar } from "@/components/NavBar";
 import { Footer } from "@/components/Footer";
 import { SessionProvider } from "@/components/SessionProvider";
 import { VerificationGate } from "@/components/VerificationGate";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "ShiftSwap",
@@ -31,6 +32,7 @@ export default function RootLayout({
             <Footer />
           </VerificationGate>
         </SessionProvider>
+        <Analytics />
       </body>
     </html>
   );

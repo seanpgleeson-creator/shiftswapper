@@ -19,6 +19,7 @@
   "dependencies": {
     "@prisma/client": "^6.0.0",
     "@sentry/nextjs": "^10.43.0",
+    "@vercel/analytics": "^2.0.1",
     "bcryptjs": "^3.0.3",
     "ical-generator": "^10.0.0",
     "luxon": "^3.7.2",
