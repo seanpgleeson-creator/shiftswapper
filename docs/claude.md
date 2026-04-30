@@ -4,6 +4,51 @@ Use this when picking up the project. See [docs/todo.md](todo.md) for the full c
 
 ---
 
+## Demo site (in progress)
+
+**Goal:** A publicly shareable demo at `shiftswapper-demo.vercel.app` with fake pre-populated shifts so anyone can try the product without signing up.
+
+**Architecture:**
+- Separate Vercel project `shiftswapper-demo` pointing to the same GitHub repo
+- Its own Neon database (connected via Vercel Storage) — fully isolated from production
+- Gated by `DEMO_MODE=true` / `NEXT_PUBLIC_DEMO_MODE=true` env vars on the demo project only
+- The seed script (`prisma/seed.ts`) is shared code; it creates demo users and shifts only when `DEMO_MODE=true`
+
+**Demo credentials:**
+
+| User | Email | Password | Role |
+|------|-------|----------|------|
+| Demo User | `demo@shiftswapper.app` | `demo1234` | Member |
+| Admin Demo | `admin@shiftswapper.app` | `admin1234` | Admin |
+| Jamie Rivera | `jamie.rivera@shiftswapper.app` | `demo1234` | Member |
+| Morgan Chen | `morgan.chen@shiftswapper.app` | `demo1234` | Member |
+
+All users are seeded with `emailVerified: true` and `smsConsent: false` so the `VerificationGate` never blocks them.
+
+**Phase status:**
+
+| Phase | Status |
+|-------|--------|
+| 1 — Vercel project + Neon DB + env vars | Done |
+| 2 — Seed script expanded + committed; DB migration + seeding | Code done; **migration and seed pending** (run on normal Wi-Fi) |
+| 3 — One-click demo login button + demo banner | Not started |
+| 4 — Auto-reset cron | Not started (optional) |
+
+**Resume here (Phase 2, first thing on normal Wi-Fi):**
+
+Get the demo `DATABASE_URL` from Vercel → `shiftswapper-demo` project → Settings → Environment Variables → reveal `DATABASE_URL`. Then run:
+
+```bash
+DATABASE_URL="<demo DATABASE_URL>" npx prisma migrate deploy
+DEMO_MODE=true DATABASE_URL="<demo DATABASE_URL>" npm run db:seed
+```
+
+Then verify at `shiftswapper-demo.vercel.app` — log in with `demo@shiftswapper.app` / `demo1234` and confirm the calendar shows populated shifts.
+
+Full checklist: see **Demo Site** section in [docs/todo.md](todo.md).
+
+---
+
 ## Current state (what's done)
 
 ### Auth and verification (Feature 14)

@@ -421,6 +421,47 @@ Site updates for toll-free verification are implemented. Use this list to ship a
 - [ ] Resubmit the toll-free verification and share the new verification link with Twilio support.
 
 
+## Demo Site
+
+Goal: A publicly shareable demo at `shiftswapper-demo.vercel.app` with fake pre-populated shifts. Isolated from production via a separate Vercel project and Neon database.
+
+> **Demo `DATABASE_URL`:** Retrieve from Vercel → `shiftswapper-demo` project → Settings → Environment Variables → reveal `DATABASE_URL`. Do not chase it in the Neon dashboard.
+
+### Phase 1: Vercel project + database setup
+
+- [x] Create `shiftswapper-demo` Vercel project from same GitHub repo
+- [x] Add Neon Postgres via Vercel Storage (Vercel auto-sets `DATABASE_URL`)
+- [x] Set env vars on demo project: `NEXTAUTH_SECRET`, `DEMO_MODE=true`, `NEXT_PUBLIC_DEMO_MODE=true`
+
+### Phase 2: Seed script + database
+
+- [x] Expand [`prisma/seed.ts`](../prisma/seed.ts) with 4 pre-verified demo users and 21 shifts (gated by `DEMO_MODE=true`)
+- [x] Commit and push seed change (commit `50f9f80`)
+- [ ] **Run migrations against demo DB** (requires normal Wi-Fi — airplane Wi-Fi blocks port 5432):
+  ```bash
+  DATABASE_URL="<demo DATABASE_URL>" npx prisma migrate deploy
+  ```
+- [ ] **Run seed against demo DB:**
+  ```bash
+  DEMO_MODE=true DATABASE_URL="<demo DATABASE_URL>" npm run db:seed
+  ```
+- [ ] **Verify:** Go to `shiftswapper-demo.vercel.app` → log in as `demo@shiftswapper.app` / `demo1234` → confirm calendar shows populated shifts with no email verification wall
+
+### Phase 3: One-click demo login + banner
+
+- [ ] Add "Try the demo" button to `/login` page (visible only when `NEXT_PUBLIC_DEMO_MODE=true`) that calls `signIn("credentials", { email: "demo@shiftswapper.app", password: "demo1234" })` directly
+- [ ] Add a small banner to the layout (or NavBar) visible in demo mode: "You're viewing a demo — data resets periodically"
+
+### Phase 4 (optional): Auto-reset cron
+
+- [ ] Add protected `POST /api/demo/reset` route — verifies a secret header, deletes all shifts and non-system users, then re-seeds via the same seed logic
+- [ ] Add `vercel.json` with a cron entry calling the reset route nightly:
+  ```json
+  { "crons": [{ "path": "/api/demo/reset", "schedule": "0 6 * * *" }] }
+  ```
+
+---
+
 ## Parallel Work Summary
 
 | Phase / Feature | Can run in parallel |
