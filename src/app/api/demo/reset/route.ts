@@ -80,19 +80,34 @@ export async function POST(request: NextRequest) {
   return handleReset(request);
 }
 
+// Hostname allowlist: the reset endpoint must only run when the request host matches
+// one of these known demo hostnames. This provides defense-in-depth so that even if
+// DEMO_MODE=true is accidentally set on production, the route refuses to execute.
+const DEMO_HOSTNAMES = ["shiftswapper-demo.vercel.app"];
+
 async function handleReset(request: NextRequest) {
   // Only active on the demo deployment
   if (process.env.DEMO_MODE !== "true") {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  // Block execution unless the host is a known demo hostname
+  const host = request.headers.get("host") ?? "";
+  const isAllowedHost = DEMO_HOSTNAMES.some((h) => host === h || host.startsWith(h));
+  if (!isAllowedHost) {
+    console.error("[DemoReset] Blocked: host", host, "is not in the demo allowlist");
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   // Verify Vercel cron secret (set CRON_SECRET in demo Vercel env vars)
   const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret) {
-    const auth = request.headers.get("authorization");
-    if (auth !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  if (!cronSecret) {
+    console.error("[DemoReset] CRON_SECRET is not set; refusing to run without auth");
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const auth = request.headers.get("authorization");
+  if (auth !== `Bearer ${cronSecret}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {

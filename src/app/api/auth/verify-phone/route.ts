@@ -3,12 +3,21 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { sensitiveAuthLimiter, getClientIp, isRateLimited } from "@/lib/ratelimit";
 
 const verifyPhoneBodySchema = z.object({
   code: z.string().min(6, "Code must be 6 digits").max(6, "Code must be 6 digits"),
 });
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request.headers);
+  if (await isRateLimited(sensitiveAuthLimiter, `verify-phone:${ip}`)) {
+    return NextResponse.json(
+      { error: "Too many requests. Please wait before trying again.", code: "RATE_LIMITED" },
+      { status: 429 }
+    );
+  }
+
   const session = await getServerSession(authOptions);
   if (!session?.user) {
     return NextResponse.json(
@@ -44,11 +53,14 @@ export async function POST(request: NextRequest) {
   }
   const code = parsed.data.code.trim();
 
+  const MAX_ATTEMPTS = 5;
+
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
       phoneVerificationCode: true,
       phoneVerificationExpiresAt: true,
+      phoneVerificationAttempts: true,
       emailVerified: true,
     },
   });
@@ -70,10 +82,20 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   }
+  if (user.phoneVerificationAttempts >= MAX_ATTEMPTS) {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { phoneVerificationCode: null, phoneVerificationExpiresAt: null, phoneVerificationAttempts: 0 },
+    });
+    return NextResponse.json(
+      { error: "Too many attempts. Request a new code.", code: "TOO_MANY_ATTEMPTS" },
+      { status: 429 }
+    );
+  }
   if (user.phoneVerificationExpiresAt < new Date()) {
     await prisma.user.update({
       where: { id: userId },
-      data: { phoneVerificationCode: null, phoneVerificationExpiresAt: null },
+      data: { phoneVerificationCode: null, phoneVerificationExpiresAt: null, phoneVerificationAttempts: 0 },
     });
     return NextResponse.json(
       { error: "Code expired. Request a new code.", code: "EXPIRED" },
@@ -81,8 +103,16 @@ export async function POST(request: NextRequest) {
     );
   }
   if (user.phoneVerificationCode !== code) {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { phoneVerificationAttempts: { increment: 1 } },
+    });
+    const attemptsLeft = MAX_ATTEMPTS - (user.phoneVerificationAttempts + 1);
     return NextResponse.json(
-      { error: "Invalid code", code: "INVALID_CODE" },
+      {
+        error: attemptsLeft > 0 ? `Invalid code. ${attemptsLeft} attempt${attemptsLeft === 1 ? "" : "s"} remaining.` : "Invalid code. No attempts remaining.",
+        code: "INVALID_CODE",
+      },
       { status: 400 }
     );
   }
@@ -93,6 +123,7 @@ export async function POST(request: NextRequest) {
       phoneVerified: true,
       phoneVerificationCode: null,
       phoneVerificationExpiresAt: null,
+      phoneVerificationAttempts: 0,
     },
   });
 

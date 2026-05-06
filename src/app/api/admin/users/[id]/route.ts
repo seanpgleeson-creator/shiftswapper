@@ -1,8 +1,20 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { hash } from "bcryptjs";
+import { ROLES } from "@/lib/constants";
+
+const patchUserSchema = z.object({
+  firstName: z.string().min(1).max(100).optional(),
+  lastName: z.string().min(1).max(100).optional(),
+  email: z.string().email("Invalid email format").optional(),
+  phone: z.string().regex(/^[\d\s\-+()]{10,}$/, "Invalid phone format").or(z.literal("")).optional(),
+  position: z.enum(ROLES as unknown as [string, ...string[]]).optional(),
+  role: z.enum(["member", "admin"]).optional(),
+  password: z.string().min(8, "Password must be at least 8 characters").optional(),
+});
 
 export async function PATCH(
   req: Request,
@@ -14,8 +26,21 @@ export async function PATCH(
   }
 
   const { id } = await params;
-  const body = await req.json();
-  const { firstName, lastName, email, phone, position, role, password } = body;
+
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
+
+  const parsed = patchUserSchema.safeParse(body);
+  if (!parsed.success) {
+    const message = parsed.error.errors[0]?.message ?? "Invalid input";
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
+
+  const { firstName, lastName, email, phone, position, role, password } = parsed.data;
 
   const existing = await prisma.user.findUnique({ where: { id } });
   if (!existing) {

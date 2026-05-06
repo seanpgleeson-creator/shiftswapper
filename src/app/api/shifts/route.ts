@@ -4,19 +4,23 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { createShiftAuthenticatedSchema, createShiftAdminSchema } from "@/lib/validation";
 
-function shiftToJson(shift: {
-  id: string;
-  status: string;
-  location: string;
-  role: string;
-  shiftDate: Date;
-  startTime: string;
-  endTime: string;
-  posterName: string;
-  covererName: string | null;
-  createdAt: Date;
-  postedByUserId: string | null;
-}) {
+function shiftToJson(
+  shift: {
+    id: string;
+    status: string;
+    location: string;
+    role: string;
+    shiftDate: Date;
+    startTime: string;
+    endTime: string;
+    posterName: string;
+    covererName: string | null;
+    createdAt: Date;
+    postedByUserId: string | null;
+  },
+  currentUserId?: string,
+  isAdmin?: boolean
+) {
   return {
     id: shift.id,
     status: shift.status,
@@ -28,7 +32,9 @@ function shiftToJson(shift: {
     poster_name: shift.posterName,
     coverer_name: shift.covererName ?? undefined,
     created_at: shift.createdAt.toISOString(),
-    posted_by_user_id: shift.postedByUserId ?? undefined,
+    is_my_shift: currentUserId
+      ? shift.postedByUserId === currentUserId || isAdmin === true
+      : false,
   };
 }
 
@@ -85,7 +91,8 @@ export async function GET(request: NextRequest) {
     orderBy: [{ shiftDate: "asc" }, { startTime: "asc" }],
   });
 
-  return NextResponse.json({ shifts: shifts.map(shiftToJson) });
+  const currentUserId = (session.user as { id?: string }).id;
+  return NextResponse.json({ shifts: shifts.map((s) => shiftToJson(s, currentUserId, isAdmin)) });
 }
 
 export async function POST(request: NextRequest) {
@@ -239,7 +246,7 @@ export async function POST(request: NextRequest) {
     console.error("POST /api/shifts error:", err);
     return NextResponse.json(
       {
-        error: "Failed to create shift. Please try again. If this persists, check that the database is set up and migrations have been run.",
+        error: "Failed to create shift. Please try again.",
         code: "INTERNAL_ERROR",
       },
       { status: 500 }

@@ -126,7 +126,6 @@ export async function PATCH(
     end_time: updated.endTime,
     poster_name: updated.posterName,
     coverer_name: updated.covererName,
-    coverer_phone: updated.covererPhone ?? undefined,
     created_at: updated.createdAt.toISOString(),
     google_calendar_url: googleCalendarUrl,
   };

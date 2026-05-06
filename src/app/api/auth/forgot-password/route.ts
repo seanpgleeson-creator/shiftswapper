@@ -1,14 +1,15 @@
+import { createHash, randomInt, randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { createHash } from "crypto";
 import { prisma } from "@/lib/db";
 import { sendPasswordResetSms } from "@/lib/sms";
 import { sendPasswordResetEmail } from "@/lib/email";
+import { sensitiveAuthLimiter, getClientIp, isRateLimited } from "@/lib/ratelimit";
 
 const TOKEN_EXPIRY_MS = 15 * 60 * 1000; // 15 minutes
 const RATE_LIMIT_MS = 60 * 1000; // 60 seconds between requests
 
 function generateSixDigitCode(): string {
-  return String(Math.floor(100000 + Math.random() * 900000));
+  return String(randomInt(100000, 1000000));
 }
 
 function hashToken(token: string): string {
@@ -16,6 +17,14 @@ function hashToken(token: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req.headers);
+  if (await isRateLimited(sensitiveAuthLimiter, `forgot-password:${ip}`)) {
+    return NextResponse.json(
+      { error: "Too many requests. Please wait before requesting another reset.", code: "RATE_LIMITED" },
+      { status: 429 }
+    );
+  }
+
   let body: unknown;
   try {
     body = await req.json();
@@ -77,6 +86,7 @@ export async function POST(req: NextRequest) {
         passwordResetToken: code,
         passwordResetExpiresAt: expiresAt,
         passwordResetMethod: "sms",
+        passwordResetAttempts: 0,
       },
     });
 
@@ -89,7 +99,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Email method
-  const plainToken = crypto.randomUUID();
+  const plainToken = randomUUID();
   const hashedToken = hashToken(plainToken);
 
   await prisma.user.update({
@@ -98,6 +108,7 @@ export async function POST(req: NextRequest) {
       passwordResetToken: hashedToken,
       passwordResetExpiresAt: expiresAt,
       passwordResetMethod: "email",
+      passwordResetAttempts: 0,
     },
   });
 

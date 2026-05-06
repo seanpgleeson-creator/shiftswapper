@@ -1,11 +1,20 @@
+import { randomBytes } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { hash } from "bcryptjs";
-import { randomBytes } from "crypto";
 import { prisma } from "@/lib/db";
 import { signupSchema } from "@/lib/validation";
 import { sendSignupNotificationToAdmin, sendVerificationEmail } from "@/lib/email";
+import { authLimiter, getClientIp, isRateLimited } from "@/lib/ratelimit";
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request.headers);
+  if (await isRateLimited(authLimiter, `signup:${ip}`)) {
+    return NextResponse.json(
+      { error: "Too many requests. Please wait a moment before trying again.", code: "RATE_LIMITED" },
+      { status: 429 }
+    );
+  }
+
   let body: unknown;
   try {
     body = await request.json();
@@ -38,9 +47,14 @@ export async function POST(request: NextRequest) {
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
+    // Return generic success so the response is indistinguishable from a real signup.
+    // The user will receive a "check your email" message; no account existence is revealed.
     return NextResponse.json(
-      { error: "An account with this email already exists", code: "EMAIL_IN_USE" },
-      { status: 409 }
+      {
+        message: "Account created. Check your email to verify, then sign in.",
+        verification_email_sent: false,
+      },
+      { status: 201 }
     );
   }
 

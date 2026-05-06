@@ -1,16 +1,26 @@
-import { NextResponse } from "next/server";
+import { randomInt } from "crypto";
+import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendPhoneVerificationCode } from "@/lib/sms";
+import { sensitiveAuthLimiter, getClientIp, isRateLimited } from "@/lib/ratelimit";
 
 const CODE_EXPIRY_MS = 10 * 60 * 1000; // 10 minutes
+const MAX_ATTEMPTS = 5;
 
 function generateSixDigitCode(): string {
-  return String(Math.floor(100000 + Math.random() * 900000));
+  return String(randomInt(100000, 1000000));
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  const ip = getClientIp(request.headers);
+  if (await isRateLimited(sensitiveAuthLimiter, `send-phone-code:${ip}`)) {
+    return NextResponse.json(
+      { error: "Too many requests. Please wait before requesting another code.", code: "RATE_LIMITED" },
+      { status: 429 }
+    );
+  }
   const session = await getServerSession(authOptions);
   if (!session?.user) {
     return NextResponse.json(
@@ -58,6 +68,7 @@ export async function POST() {
     data: {
       phoneVerificationCode: code,
       phoneVerificationExpiresAt: expiresAt,
+      phoneVerificationAttempts: 0,
     },
   });
 

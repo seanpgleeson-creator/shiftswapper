@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
+import { NextRequest, NextResponse } from "next/server";
 import { hash } from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { sensitiveAuthLimiter, getClientIp, isRateLimited } from "@/lib/ratelimit";
 
 const resetSchema = z.object({
   email: z.string().email(),
@@ -16,6 +17,14 @@ function hashToken(token: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req.headers);
+  if (await isRateLimited(sensitiveAuthLimiter, `reset-password:${ip}`)) {
+    return NextResponse.json(
+      { error: "Too many requests. Please wait before trying again.", code: "RATE_LIMITED" },
+      { status: 429 }
+    );
+  }
+
   let body: unknown;
   try {
     body = await req.json();
@@ -40,6 +49,8 @@ export async function POST(req: NextRequest) {
 
   const normalizedEmail = email.trim().toLowerCase();
 
+  const MAX_RESET_ATTEMPTS = 5;
+
   const user = await prisma.user.findUnique({
     where: { email: normalizedEmail },
     select: {
@@ -47,6 +58,7 @@ export async function POST(req: NextRequest) {
       passwordResetToken: true,
       passwordResetExpiresAt: true,
       passwordResetMethod: true,
+      passwordResetAttempts: true,
     },
   });
 
@@ -64,6 +76,22 @@ export async function POST(req: NextRequest) {
     return invalid();
   }
 
+  if (user.passwordResetAttempts >= MAX_RESET_ATTEMPTS) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordResetToken: null,
+        passwordResetExpiresAt: null,
+        passwordResetMethod: null,
+        passwordResetAttempts: 0,
+      },
+    });
+    return NextResponse.json(
+      { error: "Too many failed attempts. Please request a new reset code." },
+      { status: 429 }
+    );
+  }
+
   let tokenValid = false;
 
   if (user.passwordResetMethod === "sms" && code) {
@@ -73,6 +101,10 @@ export async function POST(req: NextRequest) {
   }
 
   if (!tokenValid) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordResetAttempts: { increment: 1 } },
+    });
     return invalid();
   }
 
@@ -85,6 +117,7 @@ export async function POST(req: NextRequest) {
       passwordResetToken: null,
       passwordResetExpiresAt: null,
       passwordResetMethod: null,
+      passwordResetAttempts: 0,
     },
   });
 

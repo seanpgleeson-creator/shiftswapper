@@ -485,6 +485,49 @@ Goal: A publicly shareable demo at `shiftswapper-demo.vercel.app` with fake pre-
 
 ---
 
+## Security
+
+Findings from public-launch security audit. Items grouped by area; tags follow the project's existing `[TAG] [PRIORITY]` convention.
+
+### CRITICAL
+
+- [ ] **[SECURITY] [CRITICAL]** Unauthenticated `GET /api/shifts/[id]` leaks shift detail (poster name, location, role) to anyone with a UUID — add `getServerSession` check and 401 like the list route — `src/app/api/shifts/[id]/route.ts`
+- [ ] **[SECURITY] [CRITICAL]** Unauthenticated `GET /api/shifts/[id]/calendar` returns .ics for any covered shift to anyone with a UUID — gate behind session (and optionally restrict to coverer/poster/admin) — `src/app/api/shifts/[id]/calendar/route.ts`
+- [ ] **[SECURITY] [CRITICAL]** No HTTP security headers on a public site — add CSP, X-Frame-Options=DENY, X-Content-Type-Options=nosniff, Referrer-Policy=strict-origin-when-cross-origin, Permissions-Policy (camera/mic/geo off), HSTS via `headers()` in `next.config.ts`
+- [ ] **[SECURITY] [CRITICAL]** No rate limiting on credentials login, signup, password reset, phone-code endpoints — brute force unrestricted; add per-IP + per-account limits (Upstash Redis on Vercel, or Vercel Firewall rules)
+- [ ] **[SECURITY] [CRITICAL]** 6-digit verification/reset codes generated with `Math.random()` and have no failed-attempt counter — switch to `crypto.randomInt`, add attempt counter (lock after 5 failures), and short-circuit verify endpoints — `src/app/api/auth/send-phone-code/route.ts`, `src/app/api/auth/forgot-password/route.ts`, `src/app/api/auth/verify-phone/route.ts`, `src/app/api/auth/reset-password/route.ts`
+- [ ] **[SECURITY] [CRITICAL]** Next.js high-severity DoS advisory (GHSA-q4gf-8mx6-v5v3) — run `npm audit fix` to bump `next`, `prisma`, `postcss`; verify build + smoke test
+
+### HIGH
+
+- [ ] **[SECURITY] [HIGH]** No `robots.txt` — search engines can crawl `/login`, `/signup`, `/account`, `/admin`, `/calendar`; add `app/robots.ts` (or `public/robots.txt`) disallowing app routes; keep `/`, `/about`, `/privacy`, `/terms`, `/upcoming-features` allowed
+- [ ] **[SECURITY] [HIGH]** `PATCH /api/admin/users/[id]` has no Zod validation — add schema (email format, role enum, position enum, password length) — `src/app/api/admin/users/[id]/route.ts`
+- [ ] **[SECURITY] [HIGH]** Signup leaks account existence via `EMAIL_IN_USE` 409 — return generic 200 and let the verification email flow disambiguate (matches forgot-password's hardened pattern) — `src/app/api/auth/signup/route.ts`
+- [ ] **[SECURITY] [HIGH]** Verbose internal error message ("check that the database is set up and migrations have been run") leaks backend internals — return generic message — `src/app/api/shifts/route.ts:242`
+- [ ] **[SECURITY] [HIGH]** Phone numbers logged at info level in SMS module — drop to debug or redact to last 4 digits — `src/lib/sms.ts`
+- [ ] **[SECURITY] [HIGH]** Bug-report description + email logged and sent to Sentry without scrubbing — add `beforeSend` PII scrubber in `sentry.server.config.ts` and trim logged description — `src/app/api/bug-report/route.ts`, `sentry.server.config.ts`
+- [ ] **[SECURITY] [HIGH]** Demo credentials (`demo@shiftswapper.app` / `demo1234`) hardcoded in client bundle ship to production — guard `/demo` page on `NEXT_PUBLIC_DEMO_MODE === "true"` and 404 otherwise; verify the demo user does not exist in the production DB — `src/app/demo/page.tsx`
+- [ ] **[SECURITY] [HIGH]** `/api/demo/reset` is one env-var flip from wiping production users — add hostname allowlist (e.g. require `VERCEL_URL` to match the demo subdomain) on top of the `DEMO_MODE` check — `src/app/api/demo/reset/route.ts`
+- [ ] **[SECURITY] [HIGH]** No centralized auth/header enforcement — add `middleware.ts` that injects security headers and gates all `/api/*` routes (except auth/locations/roles) on session + applies basic per-IP rate limit
+- [ ] **[SECURITY] [HIGH]** `npm audit fix` covers transitive `axios`, `follow-redirects` advisories — apply and re-run audit until 0 high
+
+### MEDIUM
+
+- [ ] **[SECURITY] [MEDIUM]** `coverer_phone` returned in cover response contradicts PRD/backend.md "phones never returned" — drop the field (the coverer already knows their own phone) — `src/app/api/shifts/[id]/cover/route.ts:129`
+- [ ] **[SECURITY] [MEDIUM]** `posted_by_user_id` UUID exposed in shift list/detail responses — drop or replace with a boolean `is_my_shift` flag computed server-side — `src/app/api/shifts/route.ts`, `src/app/api/shifts/[id]/route.ts`
+- [ ] **[SECURITY] [MEDIUM]** Sentry has no PII scrubbing — add `beforeSend` to drop `request.cookies`, redact email/phone shapes, and limit message length — `sentry.client.config.ts`, `sentry.server.config.ts`
+- [ ] **[SECURITY] [MEDIUM]** NextAuth cookie/session config relies on defaults — explicitly set `cookies.sessionToken.options` with `httpOnly: true`, `secure: true`, `sameSite: "lax"`; document JWT signing key rotation procedure — `src/lib/auth.ts`
+- [ ] **[SECURITY] [MEDIUM]** `.env` in repo root holds real production secrets — rotate `NEXTAUTH_SECRET`, `RESEND_API_KEY`, `TWILIO_AUTH_TOKEN`, and `DATABASE_URL` if there's any reason to suspect leakage; document that local dev should use a separate `.env.local` and that `.env` should not contain prod creds
+- [ ] **[SECURITY] [MEDIUM]** No CSRF defense beyond NextAuth's `SameSite=Lax` cookie — add explicit `Origin`/`Referer` check (or double-submit token) on state-changing JSON routes — applies to all `/api/*` mutating handlers
+
+### LOW
+
+- [ ] **[SECURITY] [LOW]** Owner home address + personal phone are public on `/about`, `/privacy`, `/terms` — required by Twilio toll-free compliance; consider replacing home address with a registered agent / PO box if practical
+- [ ] **[SECURITY] [LOW]** Add `Cache-Control: private, no-store` on authenticated API responses to prevent any intermediary/CDN caching — applies to all `/api/*` JSON responses
+- [ ] **[SECURITY] [LOW]** Add automated dependency scanning (Dependabot or Vercel security alerts) so future advisories surface without manual `npm audit`
+
+---
+
 ## Parallel Work Summary
 
 | Phase / Feature | Can run in parallel |

@@ -7,6 +7,14 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    return NextResponse.json(
+      { error: "Sign in to view shift details", code: "UNAUTHORIZED" },
+      { status: 401 }
+    );
+  }
+
   const { id } = await params;
   const shift = await prisma.shift.findUnique({
     where: { id },
@@ -32,6 +40,9 @@ export async function GET(
     );
   }
 
+  const currentUserId = (session.user as { id?: string }).id;
+  const isAdmin = (session.user as { role?: string }).role === "admin";
+
   return NextResponse.json({
     id: shift.id,
     status: shift.status,
@@ -43,11 +54,13 @@ export async function GET(
     poster_name: shift.posterName,
     coverer_name: shift.covererName,
     created_at: shift.createdAt.toISOString(),
-    posted_by_user_id: shift.postedByUserId ?? undefined,
+    is_my_shift: currentUserId
+      ? shift.postedByUserId === currentUserId || isAdmin
+      : false,
   });
 }
 
-function shiftToJson(shift: {
+function shiftToJsonBasic(shift: {
   id: string;
   status: string;
   location: string;
@@ -116,7 +129,7 @@ export async function PATCH(
       where: { id },
       data: { status: "cancelled" },
     });
-    return NextResponse.json(shiftToJson(updated));
+    return NextResponse.json(shiftToJsonBasic(updated));
   }
   return NextResponse.json(
     { error: "Expected status: cancelled", code: "VALIDATION_ERROR" },

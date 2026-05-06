@@ -3,8 +3,15 @@
 import { useEffect, useState } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { notFound } from "next/navigation";
 
 export default function DemoPage() {
+  // This page is only available on the demo deployment.
+  // On production (NEXT_PUBLIC_DEMO_MODE not set) render a 404 so that
+  // demo credentials bundled in this file cannot be used against production.
+  if (process.env.NEXT_PUBLIC_DEMO_MODE !== "true") {
+    notFound();
+  }
   const { status } = useSession();
   const router = useRouter();
   const [error, setError] = useState(false);

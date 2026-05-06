@@ -1,5 +1,11 @@
 import twilio from "twilio";
 
+/** Returns a redacted phone for logging: +1...1234 */
+function redactPhone(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  return digits.length >= 4 ? `***${digits.slice(-4)}` : "***";
+}
+
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const fromNumber = process.env.TWILIO_PHONE_NUMBER;
@@ -46,11 +52,11 @@ export async function sendCoverSms(
       from: fromNumber,
       to: toE164,
     });
-    console.info("[CoverSMS] Sent to", toE164);
+    console.info("[CoverSMS] Sent to", redactPhone(toE164));
     return { ok: true };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error("[CoverSMS] Twilio error sending to", toE164, ":", message);
+    console.error("[CoverSMS] Twilio error sending to", redactPhone(toE164), ":", message);
     return { ok: false, error: message };
   }
 }
@@ -80,7 +86,7 @@ export async function sendPasswordResetSms(
       from: fromNumber,
       to: toE164,
     });
-    console.info("[ResetSMS] Sent code to", toE164);
+    console.info("[ResetSMS] Sent code to", redactPhone(toE164));
     return { ok: true };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -114,7 +120,7 @@ export async function sendPhoneVerificationCode(
       from: fromNumber,
       to: toE164,
     });
-    console.info("[VerifySMS] Sent code to", toE164);
+    console.info("[VerifySMS] Sent code to", redactPhone(toE164));
     return { ok: true };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

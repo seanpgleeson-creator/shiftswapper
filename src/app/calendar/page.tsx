@@ -15,7 +15,7 @@ type Shift = {
   start_time: string;
   end_time: string;
   poster_name: string;
-  posted_by_user_id?: string;
+  is_my_shift?: boolean;
 };
 
 
@@ -127,11 +127,7 @@ export default function CalendarPage() {
   const modalRef = useFocusTrap(!!detailShift);
   const isAuthenticated = !!session?.user;
   const sessionName = isAuthenticated ? (session?.user?.name ?? "You") : "";
-  const userId = (session?.user as { id?: string } | undefined)?.id;
-  const userRole = (session?.user as { role?: string } | undefined)?.role;
-  const canRemoveShift = (shift: Shift) =>
-    isAuthenticated &&
-    (shift.posted_by_user_id === userId || userRole === "admin");
+  const canRemoveShift = (shift: Shift) => isAuthenticated && shift.is_my_shift === true;
   const [coverError, setCoverError] = useState<string | null>(null);
   const [coverLoading, setCoverLoading] = useState(false);
   const [coverSuccess, setCoverSuccess] = useState(false);
