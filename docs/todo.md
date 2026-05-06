@@ -485,6 +485,21 @@ Goal: A publicly shareable demo at `shiftswapper-demo.vercel.app` with fake pre-
 
 ---
 
+## Homepage: auth-aware CTAs
+
+Goal: Logged-in users should see in-app actions on the homepage, not the visitor-facing "Try the Demo" / "Log in" buttons.
+
+### Frontend
+
+- [x] Convert `src/app/page.tsx` to a client component using `useSession()`.
+- [x] **Unauthenticated:** existing CTAs unchanged — "Try the Demo" (external demo link) + "Log in" + "No account needed to try the demo." subtext.
+- [x] **Authenticated:** replace CTAs with "Browse Shifts" → `/calendar` (primary blue) and "Post a Shift" → `/post` (secondary outlined); drop the demo subtext.
+- [x] **Loading:** CTA row hidden (`opacity-0`) to avoid a visible swap flash; hero copy always visible.
+
+**Verify in production:** Visit `/` while logged out → see Try the Demo + Log in. Log in → return to `/` → see Browse Shifts + Post a Shift with no demo/login buttons.
+
+---
+
 ## Security
 
 Findings from public-launch security audit. Items grouped by area; tags follow the project's existing `[TAG] [PRIORITY]` convention.

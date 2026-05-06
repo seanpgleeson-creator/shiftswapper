@@ -42,6 +42,12 @@ All users are seeded with `emailVerified: true` and `smsConsent: false` so the `
 - `data-tour` attributes added to calendar grid, nav, filter bar, shift list panel, and Post a Shift nav link
 - `/demo` added to `VerificationGate` allowlist so the auto-login isn't interrupted by the verification check
 
+**Phase 5 — auth-aware homepage (follow-up fix):**
+- `src/app/page.tsx` is now a client component using `useSession()`.
+- **Unauthenticated:** unchanged — "Try the Demo" (external demo link) + "Log in" + "No account needed to try the demo." subtext.
+- **Authenticated:** CTA row replaced with "Browse Shifts" → `/calendar` (primary) and "Post a Shift" → `/post` (secondary); demo/login buttons and demo subtext are hidden.
+- **Loading:** CTA row rendered with `opacity-0` to prevent a visible swap flash.
+
 **⚠ Known blocker — resume here tomorrow:**
 
 The "Try the Demo" button on the production landing page (`hcmcshiftswap.com`) currently links to `/demo` on the same host. But the demo user (`demo@shiftswapper.app`) does not exist in the production database, and `DEMO_MODE` is intentionally **not** set on production — setting it would be dangerous: the daily cron calls `/api/demo/reset`, which runs `prisma.user.deleteMany({ where: { email: { notIn: DEMO_USER_EMAILS } } })` and would wipe all real users.
