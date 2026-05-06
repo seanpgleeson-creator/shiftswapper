@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { formatTime, getMonthRange, formatShiftDate } from "@/lib/time";
+import { DemoTour } from "@/components/DemoTour";
 
 type Shift = {
   id: string;
@@ -264,10 +265,11 @@ export default function CalendarPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
+      <DemoTour />
       <h1 className="text-2xl font-semibold text-slate-800 mb-6">Browse Shifts</h1>
 
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" data-tour="calendar-nav">
           <button
             type="button"
             onClick={goPrev}
@@ -296,7 +298,7 @@ export default function CalendarPage() {
           </button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3" data-tour="location-filters">
           <span className="text-sm text-slate-600">Location:</span>
           {locations.map((loc) => {
             const on = locationFilter.length === 0 || locationFilter.includes(loc);
@@ -356,7 +358,7 @@ export default function CalendarPage() {
 
       {!noShiftsInMonth && (
         <div className="flex flex-col md:flex-row md:items-start gap-6 md:gap-8">
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0" data-tour="calendar-grid">
             <div className="grid grid-cols-7 gap-1 mb-2">
               {DAY_NAMES.map((d) => (
                 <div
@@ -410,7 +412,7 @@ export default function CalendarPage() {
             <p className="mt-2 text-xs text-slate-500">Shading indicates pay period boundaries</p>
           </div>
 
-          <section className="md:min-w-[280px] md:flex-1 md:border-l md:border-slate-200 md:pl-8 md:pt-0 mt-6 md:mt-0">
+          <section className="md:min-w-[280px] md:flex-1 md:border-l md:border-slate-200 md:pl-8 md:pt-0 mt-6 md:mt-0" data-tour="shift-list">
             {selectedDay ? (
               selectedShifts.length > 0 ? (
                 <>

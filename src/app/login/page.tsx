@@ -6,6 +6,8 @@ import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ErrorIcon } from "@/components/ErrorIcon";
 
+const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -14,7 +16,30 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  async function handleDemoLogin() {
+    setDemoLoading(true);
+    setError(null);
+    try {
+      const result = await signIn("credentials", {
+        email: "demo@shiftswapper.app",
+        password: "demo1234",
+        redirect: false,
+      });
+      if (result?.ok) {
+        router.push("/calendar");
+        router.refresh();
+      } else {
+        setError("Demo login failed. Please try again.");
+      }
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setDemoLoading(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -101,6 +126,22 @@ function LoginForm() {
           Sign up
         </Link>
       </p>
+      {isDemo && (
+        <div className="mt-8 border-t border-slate-200 pt-6">
+          <p className="text-center text-sm text-slate-500 mb-3">Just exploring?</p>
+          <button
+            type="button"
+            onClick={handleDemoLogin}
+            disabled={demoLoading || submitting}
+            className="w-full min-h-[44px] rounded-md bg-amber-500 hover:bg-amber-600 px-4 py-2.5 font-medium text-white shadow-sm focus:ring-2 focus:ring-amber-400 disabled:opacity-50 disabled:pointer-events-none"
+          >
+            {demoLoading ? "Signing in…" : "Try the demo"}
+          </button>
+          <p className="mt-2 text-center text-xs text-slate-400">
+            Logs you in as a demo user — no sign-up needed
+          </p>
+        </div>
+      )}
     </div>
   );
 }

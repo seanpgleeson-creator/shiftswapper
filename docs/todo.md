@@ -364,8 +364,8 @@ Site updates for toll-free verification are implemented. Use this list to ship a
 
 ### Toll-free verification and SMS (manual)
 
-- [ ] **Resubmit (or submit) toll-free number verification with Twilio.** In Twilio Console, use the toll-free verification form and point reviewers to your live site. The site now has: app name visible (footer), service description (landing), explicit SMS consent language (signup + Account), Privacy Policy, Terms of Service, and opt-out (Reply STOP) on signup and Account.
-- [ ] **Once Twilio toll-free is approved:** In Vercel, set production env vars (`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`), redeploy if needed, then test: signup with SMS opted in → verify email → verify phone → receive SMS on cover. See [current-status.md](current-status.md) and [feature-14-production-checklist.md](feature-14-production-checklist.md).
+- [x] **Toll-free number verification approved by Twilio.**
+- [ ] **Activate SMS in production:** In Vercel, confirm production env vars are set (`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`), redeploy if needed, then test end-to-end: signup with SMS opted in → verify email → verify phone → receive SMS on cover. See [current-status.md](current-status.md) and [feature-14-production-checklist.md](feature-14-production-checklist.md).
 
 ---
 
@@ -413,12 +413,8 @@ Site updates for toll-free verification are implemented. Use this list to ship a
 ### Manual actions required
 
 - [ ] Set up domain mailbox/forwarding for **sean@hcmcshiftswap.com** (or equivalent) and confirm mail delivery.
-- [ ] Update Twilio Business Profile and Toll-Free Verification submission:
-  - DBA / brand: **ShiftSwap**
-  - Website: `https://www.hcmcshiftswap.com`
-  - Contact email: **sean@hcmcshiftswap.com**
-  - Additional information: explain that ShiftSwap is the product brand and `hcmcshiftswap.com` is the HCMC-specific deployment.
-- [ ] Resubmit the toll-free verification and share the new verification link with Twilio support.
+- [x] Updated Twilio Business Profile and Toll-Free Verification submission with ShiftSwap branding and hcmcshiftswap.com.
+- [x] Toll-free verification approved.
 
 
 ## Demo Site
@@ -437,28 +433,28 @@ Goal: A publicly shareable demo at `shiftswapper-demo.vercel.app` with fake pre-
 
 - [x] Expand [`prisma/seed.ts`](../prisma/seed.ts) with 4 pre-verified demo users and 21 shifts (gated by `DEMO_MODE=true`)
 - [x] Commit and push seed change (commit `50f9f80`)
-- [ ] **Run migrations against demo DB** (requires normal Wi-Fi — airplane Wi-Fi blocks port 5432):
+- [x] **Run migrations against demo DB** — used `prisma migrate reset --force` to recover from P3005 (schema not empty); reset drops, re-runs all 6 migrations, then seeds in one step:
   ```bash
-  DATABASE_URL="<demo DATABASE_URL>" npx prisma migrate deploy
+  DEMO_MODE=true DATABASE_URL="<demo DATABASE_URL>" npx prisma migrate reset --force
   ```
-- [ ] **Run seed against demo DB:**
-  ```bash
-  DEMO_MODE=true DATABASE_URL="<demo DATABASE_URL>" npm run db:seed
-  ```
-- [ ] **Verify:** Go to `shiftswapper-demo.vercel.app` → log in as `demo@shiftswapper.app` / `demo1234` → confirm calendar shows populated shifts with no email verification wall
+- [x] **Run seed against demo DB** — auto-ran as part of `migrate reset` (Prisma picks up `prisma.seed` from `package.json`).
+- [x] **Verify:** Logged in to `shiftswapper-demo.vercel.app` as `demo@shiftswapper.app` / `demo1234`; calendar shows populated shifts and no verification wall.
 
 ### Phase 3: One-click demo login + banner
 
-- [ ] Add "Try the demo" button to `/login` page (visible only when `NEXT_PUBLIC_DEMO_MODE=true`) that calls `signIn("credentials", { email: "demo@shiftswapper.app", password: "demo1234" })` directly
-- [ ] Add a small banner to the layout (or NavBar) visible in demo mode: "You're viewing a demo — data resets periodically"
+- [x] Add "Try the demo" button to `/login` page (visible only when `NEXT_PUBLIC_DEMO_MODE=true`) that calls `signIn("credentials", { email: "demo@shiftswapper.app", password: "demo1234" })` directly — amber button below sign-up link, with "Just exploring?" label and "Logs you in as a demo user — no sign-up needed" subtext
+- [x] Add a slim amber banner in the `NavBar` visible in demo mode: "You're viewing a demo — data resets periodically" — gated by `NEXT_PUBLIC_DEMO_MODE === "true"`, renders above the nav links
+
+> **Phase 2 notes (resolved):** First attempt with `migrate deploy` hit P3005 because the demo Neon DB had pre-existing tables, and the follow-up seed used a literal `<demo DATABASE_URL>` placeholder. Ran `prisma migrate reset --force` against the demo URL with `DEMO_MODE=true` to drop, re-migrate, and seed in one shot. Use `migrate reset` (not `migrate deploy`) on the demo DB whenever you want to refresh seed data.
 
 ### Phase 4 (optional): Auto-reset cron
 
-- [ ] Add protected `POST /api/demo/reset` route — verifies a secret header, deletes all shifts and non-system users, then re-seeds via the same seed logic
-- [ ] Add `vercel.json` with a cron entry calling the reset route nightly:
+- [x] Add protected `GET|POST /api/demo/reset` route — verifies `Authorization: Bearer <CRON_SECRET>`; deletes all shifts and non-demo users; upserts demo users; re-seeds 21 shifts. Returns 404 when `DEMO_MODE !== "true"` so it's a no-op on production.
+- [x] Add `vercel.json` with a cron entry calling the reset route at 6:00 AM UTC daily:
   ```json
   { "crons": [{ "path": "/api/demo/reset", "schedule": "0 6 * * *" }] }
   ```
+- [ ] **Manual step:** In Vercel → `shiftswapper-demo` → Settings → Environment Variables, add `CRON_SECRET` (generate with `openssl rand -base64 32`). Vercel cron will automatically send `Authorization: Bearer <CRON_SECRET>` with each call.
 
 ---
 

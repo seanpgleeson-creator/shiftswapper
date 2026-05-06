@@ -30,20 +30,21 @@ All users are seeded with `emailVerified: true` and `smsConsent: false` so the `
 | Phase | Status |
 |-------|--------|
 | 1 — Vercel project + Neon DB + env vars | Done |
-| 2 — Seed script expanded + committed; DB migration + seeding | Code done; **migration and seed pending** (run on normal Wi-Fi) |
-| 3 — One-click demo login button + demo banner | Not started |
-| 4 — Auto-reset cron | Not started (optional) |
+| 2 — Seed script expanded + committed; DB migration + seeding | Done |
+| 3 — One-click demo login button + demo banner | **Done** — amber "Try the demo" button on `/login`; slim amber banner in `NavBar`; both gated on `NEXT_PUBLIC_DEMO_MODE=true` |
+| 4 — Auto-reset cron | **Done** — `GET|POST /api/demo/reset` + `vercel.json` cron at 06:00 UTC; needs `CRON_SECRET` set in demo Vercel env vars |
 
-**Resume here (Phase 2, first thing on normal Wi-Fi):**
+**One remaining manual step for Phase 4:**
 
-Get the demo `DATABASE_URL` from Vercel → `shiftswapper-demo` project → Settings → Environment Variables → reveal `DATABASE_URL`. Then run:
+In Vercel → `shiftswapper-demo` → Settings → Environment Variables, add `CRON_SECRET` (generate locally with `openssl rand -base64 32`). Vercel cron passes this automatically as `Authorization: Bearer <value>`. Without it the route still works but is unprotected.
+
+**To refresh demo data later** (e.g. after schema changes or to wipe user-created clutter), run from local with the demo `DATABASE_URL` from Vercel → `shiftswapper-demo` → Settings → Environment Variables:
 
 ```bash
-DATABASE_URL="<demo DATABASE_URL>" npx prisma migrate deploy
-DEMO_MODE=true DATABASE_URL="<demo DATABASE_URL>" npm run db:seed
+DEMO_MODE=true DATABASE_URL="<demo DATABASE_URL>" npx prisma migrate reset --force
 ```
 
-Then verify at `shiftswapper-demo.vercel.app` — log in with `demo@shiftswapper.app` / `demo1234` and confirm the calendar shows populated shifts.
+`migrate reset` drops, re-runs all migrations, and auto-runs the seed in one step. Do **not** use `migrate deploy` for the demo DB — it errors with P3005 once tables exist.
 
 Full checklist: see **Demo Site** section in [docs/todo.md](todo.md).
 
@@ -100,15 +101,10 @@ ShiftSwap operates separately from the company's UKG scheduling system. A manual
    - In Vercel set: `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_ORG=shift-swap`, `SENTRY_PROJECT=javascript-nextjs`, and optional `SENTRY_AUTH_TOKEN`.
    - Redeploy and verify via `/bug-report` submission and Sentry Issues.
 
-3. **Complete Twilio toll-free resubmission**
-   - Ensure domain mailbox/forwarding works for `sean@hcmcshiftswap.com`.
-   - Update Twilio Business Profile + submission fields to match **ShiftSwap** branding.
-   - Add explicit explanation: product brand is ShiftSwap; `hcmcshiftswap.com` is the HCMC-specific deployment.
-   - Resubmit and share verification link with Twilio support contact.
-
-4. **After toll-free approval**
-   - Set/verify `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` in Vercel.
-   - Run production verification flow test end-to-end.
+3. **Activate Twilio SMS in production** — toll-free verification is approved.
+   - Confirm `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` (`+18443144554`) are set in Vercel production env vars.
+   - Redeploy if env vars were just added.
+   - Test end-to-end: signup with SMS opted in → verify email → verify phone (SMS code) → cover a shift → confirm poster receives SMS.
 
 ---
 

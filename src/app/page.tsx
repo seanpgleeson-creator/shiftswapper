@@ -2,40 +2,30 @@ import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <div className="max-w-4xl mx-auto px-4 py-12 sm:py-16">
-      <section className="text-center mb-12">
-        <h1 className="text-3xl sm:text-4xl font-semibold text-slate-800 mb-4">
-          Need a shift covered? Post it. Looking for hours? Browse open shifts.
-        </h1>
-      </section>
-      <section className="grid sm:grid-cols-2 gap-6 mb-16">
+    <div className="max-w-2xl mx-auto px-4 py-16 sm:py-24 text-center">
+      <h1 className="text-3xl sm:text-4xl font-semibold text-slate-800 mb-4 leading-tight">
+        Need a shift covered?<br className="hidden sm:block" /> Post it. Looking for hours? Browse open shifts.
+      </h1>
+      <p className="text-slate-500 text-base sm:text-lg mb-10">
+        ShiftSwap makes it easy for pharmacy staff to swap shifts — no group texts, no spreadsheets.
+      </p>
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
         <Link
-          href="/post"
-          className="block p-6 rounded-lg border border-slate-200 bg-white shadow-sm hover:border-blue-300 hover:shadow transition min-h-[120px]"
+          href="/demo"
+          className="inline-flex items-center justify-center min-h-[48px] w-full sm:w-auto rounded-md bg-blue-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-blue-700 focus:ring-2 focus:ring-blue-500"
         >
-          <h2 className="text-xl font-semibold text-slate-800 mb-2">Post a Shift</h2>
-          <p className="text-slate-600 text-sm">
-            Have a shift you can&apos;t work? Post it here so a teammate can pick it up.
-          </p>
+          Try the Demo
         </Link>
         <Link
-          href="/calendar"
-          className="block p-6 rounded-lg border border-slate-200 bg-white shadow-sm hover:border-blue-300 hover:shadow transition min-h-[120px]"
+          href="/login"
+          className="inline-flex items-center justify-center min-h-[48px] w-full sm:w-auto rounded-md border border-slate-300 bg-white px-6 py-3 text-base font-medium text-slate-700 hover:bg-slate-50 focus:ring-2 focus:ring-blue-500"
         >
-          <h2 className="text-xl font-semibold text-slate-800 mb-2">Browse Shifts</h2>
-          <p className="text-slate-600 text-sm">
-            See open shifts on the calendar and claim one that works for you.
-          </p>
+          Log in
         </Link>
-      </section>
-      <section className="text-center py-6 border-t border-slate-200">
-        <Link
-          href="/upcoming-features"
-          className="inline-flex items-center min-h-[44px] text-blue-600 hover:text-blue-800 text-sm font-medium"
-        >
-          We&apos;re building more — see what&apos;s coming.
-        </Link>
-      </section>
+      </div>
+      <p className="mt-6 text-sm text-slate-400">
+        No account needed to try the demo.
+      </p>
     </div>
   );
 }

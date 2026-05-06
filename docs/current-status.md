@@ -1,12 +1,12 @@
 # ShiftSwap — Current Status & Next Steps
 
-Use this doc to jump back in. Last updated after revised signup/SMS flow (SMS optional; phone required when opted in; gate and verify-email redirect by consent/phone/verified state).
+Use this doc to jump back in. Last updated after Twilio toll-free verification approved.
 
 ---
 
-## Weekend summary: what’s done
+## What's done
 
-### Feature 14: Email and phone verification (partially live)
+### Feature 14: Email and phone verification
 
 **Shipped and working in production:**
 
@@ -14,13 +14,13 @@ Use this doc to jump back in. Last updated after revised signup/SMS flow (SMS op
   - Signup sends verification email via Resend.
   - User is redirected to **Check your email** (`/check-email`); link in email sets `email_verified = true`. **Redirect after verify-email:** If user **opted in to SMS at signup** (has phone + `sms_consent`) and is **not yet phone-verified** → redirect to **/verify-phone**; else → **/calendar**.
   - Resend domain **hcmcshiftswap.com** verified (DKIM + SPF in Vercel DNS); **RESEND_FROM** set to `ShiftSwap <noreply@hcmcshiftswap.com>` so emails can go to any address.
-  - If the first email doesn’t send, the Check your email page shows a warning and a **Resend verification email** button (POST `/api/auth/resend-verification-email`).
+  - If the first email doesn't send, the Check your email page shows a warning and a **Resend verification email** button (POST `/api/auth/resend-verification-email`).
 - **Access gate**
   - **Email:** Logged-in users who have not verified email are sent to `/check-email`.
   - **Phone:** Redirect to `/verify-phone` **only** when the user has **opted in to SMS** (`sms_consent` true), has a **phone** number on file, and **has not** verified it (`phone_verified` false). Users who did not opt in or have no phone are not redirected to verify-phone.
-- **Phone verification (code and UI only)**
-  - Backend and UI are in place: POST `/api/auth/send-phone-code`, POST `/api/auth/verify-phone`, and `/verify-phone` page with 6-digit code entry and “Resend code.”
-  - SMS sending is **not** working yet in production because **Twilio toll-free number verification is still in progress**. Until that’s approved, “Send code” will fail or not deliver.
+- **Phone verification**
+  - Backend and UI are in place: POST `/api/auth/send-phone-code`, POST `/api/auth/verify-phone`, and `/verify-phone` page with 6-digit code entry and "Resend code."
+  - **Twilio toll-free verification is approved.** SMS is ready to activate — confirm env vars in Vercel and redeploy.
 
 **Database and deploy:**
 
@@ -31,18 +31,19 @@ Use this doc to jump back in. Last updated after revised signup/SMS flow (SMS op
 
 ## Next steps (when you return)
 
-### 1. Finish Twilio for SMS (phone verification + cover notifications)
+### 1. Activate Twilio SMS in production
 
-- **Current:** Waiting on **toll-free verification** in Twilio. Until the toll-free number is verified, the app cannot send SMS (verification codes or “shift covered” messages).
-- **When Twilio is approved:**
-  - Ensure production env has **TWILIO_ACCOUNT_SID**, **TWILIO_AUTH_TOKEN**, and **TWILIO_PHONE_NUMBER** (the verified toll-free number in E.164, e.g. `+18443144554`).
-  - Redeploy so the app uses the new number.
-  - **Test:** Sign up (or use an existing unverified user) → verify email → on `/verify-phone` click “Send code” → confirm SMS arrives and entering the code sets `phone_verified` and grants access.
+- **Current:** Toll-free number verification **approved**.
+- **Steps:**
+  - Confirm production env vars are set in Vercel: **TWILIO_ACCOUNT_SID**, **TWILIO_AUTH_TOKEN**, **TWILIO_PHONE_NUMBER** (`+18443144554`).
+  - Redeploy if env vars were just added.
+  - **Test end-to-end:** Sign up with SMS opted in → verify email → `/verify-phone` → "Send code" → confirm SMS arrives → enter code → confirm app access granted.
+  - Confirm a poster receives SMS when their shift is covered.
 - **Reference:** [docs/feature-14-production-checklist.md](feature-14-production-checklist.md) (Step 3 and Step 4).
 
 ### 2. Verify full Feature 14 flow in production
 
-Once SMS works:
+Once SMS is confirmed working:
 
 1. **Sign up with SMS opted in:** Use a new email, check "Get text when your shift is covered?" and enter phone. Submit → **Check your email** → click link → redirect to **Verify phone** → Send code → enter code → access app.
 2. **Sign up without SMS:** Do not check the SMS box (phone optional). Submit → Check your email → click link → redirect straight to **/calendar** (no verify-phone).
@@ -52,21 +53,21 @@ Once SMS works:
 
 - **Resend:** Already using verified domain and RESEND_FROM; no change needed unless you add another domain.
 - **Vercel DNS:** TXT/MX records for Resend are in place; no action unless you change domains.
-- **Docs:** [docs/todo.md](todo.md), [docs/backend.md](backend.md), [docs/ui.md](ui.md), and [docs/feature-14-production-checklist.md](feature-14-production-checklist.md) are updated to match current behavior and remaining SMS dependency.
+- **Docs:** [docs/todo.md](todo.md), [docs/backend.md](backend.md), [docs/ui.md](ui.md), and [docs/feature-14-production-checklist.md](feature-14-production-checklist.md) are updated to match current behavior.
 
 ---
 
 ## Quick reference
 
-| Area              | Status | Notes |
-|-------------------|--------|--------|
-| Email verification| Done   | Resend domain verified; verify-email redirects to /verify-phone (if opted in + phone + not verified) or /calendar. |
-| Phone verification| Opt-in | Required only when user opted in and has phone but not yet verified; gate redirects to /verify-phone in that case. Twilio may be pending for sending. |
-| Access gate       | Done   | Email required; phone required only when sms_consent && phone && !phone_verified. |
-| SMS on cover      | Pending| Requires sms_consent and phone_verified; same Twilio number. |
-| Account add phone | Done   | PATCH /api/me accepts optional phone; Account shows "Add phone" when no phone; verify once, no re-verification when already verified. |
-| Sentry            | Done   | @sentry/nextjs installed; config files, error boundaries (root, calendar, account), instrumentation hook. Needs DSN env var in Vercel. |
-| Bug report        | Done   | /bug-report page + POST /api/bug-report; "Report a Bug" in nav (authenticated). Logs + Sentry.captureMessage. |
+| Area               | Status  | Notes |
+|--------------------|---------|-------|
+| Email verification | Done    | Resend domain verified; verify-email redirects to /verify-phone (if opted in + phone + not verified) or /calendar. |
+| Phone verification | Ready   | Twilio toll-free approved; activate by confirming env vars in Vercel. |
+| Access gate        | Done    | Email required; phone required only when sms_consent && phone && !phone_verified. |
+| SMS on cover       | Ready   | Requires sms_consent and phone_verified; Twilio approved. |
+| Account add phone  | Done    | PATCH /api/me accepts optional phone; Account shows "Add phone" when no phone; verify once, no re-verification when already verified. |
+| Sentry             | Done    | @sentry/nextjs installed; config files, error boundaries (root, calendar, account), instrumentation hook. Needs DSN env var in Vercel. |
+| Bug report         | Done    | /bug-report page + POST /api/bug-report; "Report a Bug" in nav (authenticated). Logs + Sentry.captureMessage. |
 
 ---
 

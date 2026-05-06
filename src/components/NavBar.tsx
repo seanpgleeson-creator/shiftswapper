@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 
+const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+
 export function NavBar() {
   const { data: session, status } = useSession();
 
@@ -13,6 +15,11 @@ export function NavBar() {
 
   return (
     <header className="border-b border-slate-200 bg-white">
+      {isDemo && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 text-center text-xs text-amber-800">
+          You&apos;re viewing a demo — data resets periodically
+        </div>
+      )}
       <nav className="max-w-4xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-2 sm:gap-4">
         <Link href="/" className="flex items-center shrink-0">
           <img
@@ -28,7 +35,7 @@ export function NavBar() {
             </Link>
           </li>
           <li>
-            <Link href="/post" className={linkClass}>
+            <Link href="/post" className={linkClass} data-tour="post-nav-link">
               Post a Shift
             </Link>
           </li>
