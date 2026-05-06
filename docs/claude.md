@@ -4,7 +4,7 @@ Use this when picking up the project. See [docs/todo.md](todo.md) for the full c
 
 ---
 
-## Demo site (in progress)
+## Demo site
 
 **Goal:** A publicly shareable demo at `shiftswapper-demo.vercel.app` with fake pre-populated shifts so anyone can try the product without signing up.
 
@@ -31,20 +31,28 @@ All users are seeded with `emailVerified: true` and `smsConsent: false` so the `
 |-------|--------|
 | 1 — Vercel project + Neon DB + env vars | Done |
 | 2 — Seed script expanded + committed; DB migration + seeding | Done |
-| 3 — One-click demo login button + demo banner | **Done** — amber "Try the demo" button on `/login`; slim amber banner in `NavBar`; both gated on `NEXT_PUBLIC_DEMO_MODE=true` |
-| 4 — Auto-reset cron | **Done** — `GET|POST /api/demo/reset` + `vercel.json` cron at 06:00 UTC; needs `CRON_SECRET` set in demo Vercel env vars |
+| 3 — One-click demo login button + demo banner | Done |
+| 4 — Auto-reset cron | Done — `GET|POST /api/demo/reset` + `vercel.json` cron at 06:00 UTC |
+| 5 — Public landing page + guided tour | **Shipped** (commit `c2b3da0`) — see blocker below |
 
-**One remaining manual step for Phase 4:**
+**Phase 5 — what was built (commit `c2b3da0`):**
+- New public landing page at `/` with "Try the Demo" and "Log in" CTAs replacing the authenticated home
+- `/demo` route: auto-logs in as `demo@shiftswapper.app` / `demo1234`, sets `sessionStorage.demo_tour_active = true`, redirects to `/calendar`
+- `src/components/DemoTour.tsx`: react-joyride 6-step guided tour (welcome → calendar grid → month nav → location filters → shift list → Post a Shift nav link), ends with a sign-up CTA modal
+- `data-tour` attributes added to calendar grid, nav, filter bar, shift list panel, and Post a Shift nav link
+- `/demo` added to `VerificationGate` allowlist so the auto-login isn't interrupted by the verification check
 
-In Vercel → `shiftswapper-demo` → Settings → Environment Variables, add `CRON_SECRET` (generate locally with `openssl rand -base64 32`). Vercel cron passes this automatically as `Authorization: Bearer <value>`. Without it the route still works but is unprotected.
+**⚠ Known blocker — resume here tomorrow:**
 
-**To refresh demo data later** (e.g. after schema changes or to wipe user-created clutter), run from local with the demo `DATABASE_URL` from Vercel → `shiftswapper-demo` → Settings → Environment Variables:
+The "Try the Demo" button on the production landing page (`hcmcshiftswap.com`) currently links to `/demo` on the same host. But the demo user (`demo@shiftswapper.app`) does not exist in the production database, and `DEMO_MODE` is intentionally **not** set on production — setting it would be dangerous: the daily cron calls `/api/demo/reset`, which runs `prisma.user.deleteMany({ where: { email: { notIn: DEMO_USER_EMAILS } } })` and would wipe all real users.
 
+**Fix (one-line change):** In `src/app/page.tsx`, change the Try Demo `href` from `/demo` to `https://shiftswapper-demo.vercel.app/demo`. Both projects deploy from the same repo so the `/demo` route already exists on the demo subdomain. See todo.md Phase 5 checklist.
+
+**To refresh demo data** (after schema changes or to wipe clutter):
 ```bash
 DEMO_MODE=true DATABASE_URL="<demo DATABASE_URL>" npx prisma migrate reset --force
 ```
-
-`migrate reset` drops, re-runs all migrations, and auto-runs the seed in one step. Do **not** use `migrate deploy` for the demo DB — it errors with P3005 once tables exist.
+Do **not** use `migrate deploy` on the demo DB — it errors with P3005 once tables exist.
 
 Full checklist: see **Demo Site** section in [docs/todo.md](todo.md).
 
@@ -93,15 +101,21 @@ ShiftSwap operates separately from the company's UKG scheduling system. A manual
 
 ## Immediate next steps
 
-1. **Commit and deploy current changes**
-   - Commit all branding/compliance/Sentry updates and push to `main`.
-   - Confirm Vercel deployment succeeds.
+1. **Fix the Try Demo button (one-line change)**
+   - In `src/app/page.tsx`, change the "Try the Demo" `href` from `/demo` to `https://shiftswapper-demo.vercel.app/demo`.
+   - Commit and push to `main`; Vercel deploys in ~1 minute.
+   - Verify on the demo subdomain: `shiftswapper-demo.vercel.app` landing → Try Demo → auto-login → tour starts → finish → sign-up CTA.
 
-2. **Finalize Sentry activation**
-   - In Vercel set: `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_ORG=shift-swap`, `SENTRY_PROJECT=javascript-nextjs`, and optional `SENTRY_AUTH_TOKEN`.
+2. **Wire up the demo subdomain (manual Vercel steps)**
+   - Confirm `DEMO_MODE=true` and `NEXT_PUBLIC_DEMO_MODE=true` are set on the **demo** Vercel project.
+   - Confirm `CRON_SECRET` is set on the demo project (generate with `openssl rand -base64 32`).
+   - Trigger a manual reset to seed demo users: `curl -X POST https://shiftswapper-demo.vercel.app/api/demo/reset -H "Authorization: Bearer <CRON_SECRET>"` — should return `{"ok":true,...}`.
+
+3. **Finalize Sentry activation**
+   - In Vercel (production) set: `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_ORG=shift-swap`, `SENTRY_PROJECT=javascript-nextjs`, and optional `SENTRY_AUTH_TOKEN`.
    - Redeploy and verify via `/bug-report` submission and Sentry Issues.
 
-3. **Activate Twilio SMS in production** — toll-free verification is approved.
+4. **Activate Twilio SMS in production** — toll-free verification is approved.
    - Confirm `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` (`+18443144554`) are set in Vercel production env vars.
    - Redeploy if env vars were just added.
    - Test end-to-end: signup with SMS opted in → verify email → verify phone (SMS code) → cover a shift → confirm poster receives SMS.

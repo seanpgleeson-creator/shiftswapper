@@ -458,6 +458,33 @@ Goal: A publicly shareable demo at `shiftswapper-demo.vercel.app` with fake pre-
 
 ---
 
+### Phase 5: Public landing page + guided tour (in progress)
+
+**Shipped to `main` (commit `c2b3da0`):**
+
+- [x] Replace homepage `/` with public landing page (Try Demo + Log in CTAs); old auth'd home content removed
+- [x] Add `/demo` route — auto-logs in as `demo@shiftswapper.app` / `demo1234` and sets `sessionStorage.demo_tour_active = true`, then redirects to `/calendar`
+- [x] Add `src/components/DemoTour.tsx` — react-joyride 6-step tour: welcome → calendar grid → month nav → location filters → shift list → Post a Shift nav link; finishes with a sign-up CTA modal
+- [x] Add `data-tour` attributes to calendar grid, nav, filter bar, shift list, and Post a Shift nav link
+- [x] Add `/demo` to `VerificationGate` allowlist so auto-login isn't interrupted by the verification check
+- [x] Install `react-joyride` dependency
+
+**⚠ Blocker discovered after deploy:**
+
+- Production (`hcmcshiftswap.com`) has `DEMO_MODE` unset → `/api/demo/reset` returns 404 and demo user does not exist in the production database.
+- Setting `DEMO_MODE=true` on production is **unsafe**: the daily cron calls `/api/demo/reset`, which runs `prisma.user.deleteMany({ where: { email: { notIn: DEMO_USER_EMAILS } } })` — this would wipe all real users.
+- The "Try the Demo" button currently points to `/demo` on the same host, so it fails on production where the demo user doesn't exist.
+
+**Resume here:**
+
+- [ ] In `src/app/page.tsx`, change the "Try the Demo" `href` from `/demo` to `https://shiftswapper-demo.vercel.app/demo` (one-line fix — routes visitors to the isolated demo project where the demo user exists).
+- [ ] Confirm `DEMO_MODE=true` and `NEXT_PUBLIC_DEMO_MODE=true` are set on the **demo** Vercel project (not production).
+- [ ] Confirm `CRON_SECRET` is set on the demo project. Trigger a manual seed: `curl -X POST https://shiftswapper-demo.vercel.app/api/demo/reset -H "Authorization: Bearer <CRON_SECRET>"` — should return `{"ok":true,...}`.
+- [ ] Test the full flow end-to-end on the demo subdomain: landing → Try Demo → auto-login → tour starts → finish tour → sign-up CTA modal appears.
+- [ ] Optionally: hide the "Try the Demo" button when `NEXT_PUBLIC_DEMO_MODE=true` (already on demo, button is redundant).
+
+---
+
 ## Parallel Work Summary
 
 | Phase / Feature | Can run in parallel |
