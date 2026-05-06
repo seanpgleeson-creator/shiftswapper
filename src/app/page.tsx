@@ -10,12 +10,12 @@ export default function HomePage() {
         ShiftSwap makes it easy for pharmacy staff to swap shifts — no group texts, no spreadsheets.
       </p>
       <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-        <Link
-          href="/demo"
+        <a
+          href="https://shiftswapper-demo.vercel.app/demo"
           className="inline-flex items-center justify-center min-h-[48px] w-full sm:w-auto rounded-md bg-blue-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-blue-700 focus:ring-2 focus:ring-blue-500"
         >
           Try the Demo
-        </Link>
+        </a>
         <Link
           href="/login"
           className="inline-flex items-center justify-center min-h-[48px] w-full sm:w-auto rounded-md border border-slate-300 bg-white px-6 py-3 text-base font-medium text-slate-700 hover:bg-slate-50 focus:ring-2 focus:ring-blue-500"
