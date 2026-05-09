@@ -500,6 +500,14 @@ Goal: Logged-in users should see in-app actions on the homepage, not the visitor
 
 ---
 
+## Bug fixes
+
+### CRITICAL
+
+- [x] **[BUG] [CRITICAL]** Logged-in users hit a re-login loop when clicking Browse Shifts / Post a Shift — `src/proxy.ts` auth guard called `getToken()`, which returns null in Next.js 16 proxy runtime when `authOptions` overrides `cookies.sessionToken.name`. Next.js 16 docs explicitly disallow auth logic in `proxy.ts`. Removed the auth guard; CSRF Origin check and `Cache-Control` kept. Auth is still enforced client-side via `useSession()` on protected pages and server-side via `getServerSession()` on API routes. Also added `useSession()` redirect guards to `bug-report/page.tsx` and `account/page.tsx`.
+
+---
+
 ## Security
 
 Findings from public-launch security audit. Items grouped by area; tags follow the project's existing `[TAG] [PRIORITY]` convention.
@@ -523,7 +531,7 @@ Findings from public-launch security audit. Items grouped by area; tags follow t
 - [ ] **[SECURITY] [HIGH]** Bug-report description + email logged and sent to Sentry without scrubbing — add `beforeSend` PII scrubber in `sentry.server.config.ts` and trim logged description — `src/app/api/bug-report/route.ts`, `sentry.server.config.ts`
 - [ ] **[SECURITY] [HIGH]** Demo credentials (`demo@shiftswapper.app` / `demo1234`) hardcoded in client bundle ship to production — guard `/demo` page on `NEXT_PUBLIC_DEMO_MODE === "true"` and 404 otherwise; verify the demo user does not exist in the production DB — `src/app/demo/page.tsx`
 - [ ] **[SECURITY] [HIGH]** `/api/demo/reset` is one env-var flip from wiping production users — add hostname allowlist (e.g. require `VERCEL_URL` to match the demo subdomain) on top of the `DEMO_MODE` check — `src/app/api/demo/reset/route.ts`
-- [ ] **[SECURITY] [HIGH]** No centralized auth/header enforcement — add `middleware.ts` that injects security headers and gates all `/api/*` routes (except auth/locations/roles) on session + applies basic per-IP rate limit
+- [ ] **[SECURITY] [HIGH]** No centralized auth enforcement — `proxy.ts` cannot call `getToken()` in Next.js 16 (returns null with custom cookie name); per-route `getServerSession()` checks on API routes and `useSession()` on pages are the current defence. Consider migrating to NextAuth v5 `auth()` helper for a centralized server-side gate if needed.
 - [ ] **[SECURITY] [HIGH]** `npm audit fix` covers transitive `axios`, `follow-redirects` advisories — apply and re-run audit until 0 high
 
 ### MEDIUM

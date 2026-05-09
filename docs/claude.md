@@ -4,6 +4,19 @@ Use this when picking up the project. See [docs/todo.md](todo.md) for the full c
 
 ---
 
+## Recent fix: login redirect loop (post-security-hardening)
+
+Commit `b80b493` ("Security hardening") added an auth guard in `src/proxy.ts` that called `getToken()`. In Next.js 16, `proxy.ts` (formerly `middleware.ts`) is documented as **not** for authentication — `getToken()` returns `null` at the proxy runtime when `authOptions` overrides `cookies.sessionToken.name` (which the same commit added to `src/lib/auth.ts`). This caused every click to `/calendar`, `/post`, `/account`, etc. to redirect to `/login`, even for authenticated users.
+
+**Fix applied:**
+- Removed the auth guard, `PROTECTED_PAGES` constant, `isProtectedPage()` helper, and `getToken` import from `src/proxy.ts`. Kept the CSRF Origin check and `Cache-Control: private, no-store` blocks.
+- Added missing `useSession()` redirect guards (`router.replace("/login")` on `status === "unauthenticated"`) to `src/app/bug-report/page.tsx` and `src/app/account/page.tsx`.
+- Auth remains enforced: client-side via `useSession()` on all protected pages; server-side via `getServerSession()` on all protected API routes.
+
+**Do not re-add auth to `proxy.ts` unless you migrate to NextAuth v5's `auth()` helper**, which is designed to work in the proxy/edge context.
+
+---
+
 ## Demo site
 
 **Goal:** A publicly shareable demo at `shiftswapper-demo.vercel.app` with fake pre-populated shifts so anyone can try the product without signing up.

@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import * as Sentry from "@sentry/nextjs";
 
 const CATEGORIES = [
@@ -13,11 +15,19 @@ const CATEGORIES = [
 ];
 
 export default function BugReportPage() {
+  const { status } = useSession();
+  const router = useRouter();
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.replace("/login");
+    }
+  }, [status, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -49,6 +59,14 @@ export default function BugReportPage() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (status === "loading" || status === "unauthenticated") {
+    return (
+      <div className="max-w-md mx-auto px-4 py-12">
+        <p className="text-slate-600">Loading…</p>
+      </div>
+    );
   }
 
   if (submitted) {

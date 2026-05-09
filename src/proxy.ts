@@ -2,24 +2,17 @@
  * Next.js Proxy (previously "middleware")
  *
  * Responsibilities:
- * 1. Auth guard — redirect unauthenticated users away from protected page routes
- * 2. CSRF check — block state-changing API requests where Origin doesn't match host
- * 3. Cache-Control — mark authenticated API responses as private/no-store
+ * 1. CSRF check — block state-changing API requests where Origin doesn't match host
+ * 2. Cache-Control — mark authenticated API responses as private/no-store
+ *
+ * Note: Auth enforcement is intentionally NOT done here. Next.js 16 proxy.ts
+ * runs before the Node.js runtime is fully available and getToken() cannot read
+ * the session cookie when authOptions overrides the cookie name. Auth is enforced
+ * client-side via useSession() on protected pages and server-side via
+ * getServerSession() on protected API routes.
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
-
-// Page routes that require a valid session
-const PROTECTED_PAGES = [
-  "/account",
-  "/admin",
-  "/post",
-  "/calendar",
-  "/bug-report",
-  "/verify-phone",
-  "/check-email",
-];
 
 // API routes that do NOT require auth (public reads + auth endpoints)
 const PUBLIC_API_PREFIXES = [
@@ -31,10 +24,6 @@ const PUBLIC_API_PREFIXES = [
 // Mutating HTTP methods subject to CSRF check
 const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
-function isProtectedPage(pathname: string): boolean {
-  return PROTECTED_PAGES.some((p) => pathname === p || pathname.startsWith(p + "/"));
-}
-
 function isPublicApiRoute(pathname: string): boolean {
   return PUBLIC_API_PREFIXES.some((p) => pathname.startsWith(p));
 }
@@ -42,20 +31,7 @@ function isPublicApiRoute(pathname: string): boolean {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // ── 1. Auth guard for protected page routes ──────────────────────────────
-  if (isProtectedPage(pathname)) {
-    const token = await getToken({
-      req: request,
-      secret: process.env.NEXTAUTH_SECRET,
-    });
-    if (!token) {
-      const loginUrl = new URL("/login", request.url);
-      loginUrl.searchParams.set("callbackUrl", request.nextUrl.pathname);
-      return NextResponse.redirect(loginUrl);
-    }
-  }
-
-  // ── 2. CSRF Origin check for mutating API requests ────────────────────────
+  // ── 1. CSRF Origin check for mutating API requests ────────────────────────
   // Skip public API routes (auth callbacks, etc.) which need to accept cross-origin POSTs
   if (
     pathname.startsWith("/api/") &&
@@ -85,7 +61,7 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // ── 3. Cache-Control on authenticated API responses ───────────────────────
+  // ── 2. Cache-Control on authenticated API responses ───────────────────────
   const response = NextResponse.next();
   if (pathname.startsWith("/api/") && !isPublicApiRoute(pathname)) {
     response.headers.set("Cache-Control", "private, no-store");

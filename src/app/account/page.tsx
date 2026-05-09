@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 type Me = {
   first_name?: string;
@@ -17,6 +18,7 @@ type Me = {
 
 export default function AccountPage() {
   const { data: session, status } = useSession();
+  const router = useRouter();
   const [me, setMe] = useState<Me | null>(null);
   const [loadingMe, setLoadingMe] = useState(true);
   const [smsSaving, setSmsSaving] = useState(false);
@@ -34,6 +36,12 @@ export default function AccountPage() {
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.replace("/login");
+    }
+  }, [status, router]);
 
   useEffect(() => {
     if (status !== "authenticated") {
