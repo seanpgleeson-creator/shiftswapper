@@ -48,6 +48,34 @@ const appleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" 
   <text x="55" y="112" font-family="Georgia, serif" font-size="61" font-style="italic" font-weight="400" fill="#2c3e2d">Rx</text>
 </svg>`;
 
+// Shortcut icon — Browse Shifts: calendar grid on teal
+const calendarSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">
+  <rect width="96" height="96" fill="#1a4a3a"/>
+  <rect x="16" y="22" width="64" height="58" rx="6" fill="#f0f6f0"/>
+  <rect x="16" y="22" width="64" height="20" rx="6" fill="#5a8f5e"/>
+  <rect x="16" y="34" width="64" height="8" fill="#5a8f5e"/>
+  <line x1="34" y1="22" x2="34" y2="16" stroke="#f0f6f0" stroke-width="4" stroke-linecap="round"/>
+  <line x1="62" y1="22" x2="62" y2="16" stroke="#f0f6f0" stroke-width="4" stroke-linecap="round"/>
+  <rect x="24" y="52" width="10" height="8" rx="2" fill="#2c3e2d"/>
+  <rect x="43" y="52" width="10" height="8" rx="2" fill="#2c3e2d"/>
+  <rect x="62" y="52" width="10" height="8" rx="2" fill="#2c3e2d"/>
+  <rect x="24" y="66" width="10" height="8" rx="2" fill="#2c3e2d"/>
+  <rect x="43" y="66" width="10" height="8" rx="2" fill="#2c3e2d"/>
+</svg>`;
+
+// Shortcut icon — Post a Shift: pencil + plus on teal
+const postSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">
+  <rect width="96" height="96" fill="#1a4a3a"/>
+  <rect x="20" y="58" width="40" height="18" rx="4" fill="#f0f6f0"/>
+  <rect x="20" y="20" width="40" height="44" rx="4" fill="#f0f6f0"/>
+  <rect x="27" y="30" width="26" height="3" rx="1.5" fill="#5a8f5e"/>
+  <rect x="27" y="37" width="20" height="3" rx="1.5" fill="#5a8f5e"/>
+  <rect x="27" y="44" width="16" height="3" rx="1.5" fill="#5a8f5e"/>
+  <circle cx="70" cy="65" r="14" fill="#f59e0b"/>
+  <rect x="63" y="63.5" width="14" height="3" rx="1.5" fill="#1a4a3a"/>
+  <rect x="68.5" y="58" width="3" height="14" rx="1.5" fill="#1a4a3a"/>
+</svg>`;
+
 async function generate() {
   const iconSvgBuf = Buffer.from(iconSvg);
   const appleSvgBuf = Buffer.from(appleSvg);
@@ -60,6 +88,13 @@ async function generate() {
   await sharp(iconSvgBuf).resize(512, 512).png().toFile(join(root, "public/icons/icon-512x512.png"));
   console.log("✓ public/icons/icon-512x512.png");
 
+  // Shortcut icons 96×96
+  await sharp(Buffer.from(calendarSvg)).resize(96, 96).png().toFile(join(root, "public/icons/shortcut-calendar.png"));
+  console.log("✓ public/icons/shortcut-calendar.png");
+
+  await sharp(Buffer.from(postSvg)).resize(96, 96).png().toFile(join(root, "public/icons/shortcut-post.png"));
+  console.log("✓ public/icons/shortcut-post.png");
+
   // Apple touch icon 180×180
   await sharp(appleSvgBuf).resize(180, 180).png().toFile(join(root, "public/apple-touch-icon.png"));
   console.log("✓ public/apple-touch-icon.png");
@@ -69,7 +104,6 @@ async function generate() {
   console.log("✓ public/favicon-32x32.png");
 
   // favicon.ico — 32×32 inside an ICO container using raw PNG bytes
-  // sharp can output PNG; for a proper .ico we write a minimal ICO wrapper.
   const pngBuf32 = await sharp(iconSvgBuf).resize(32, 32).png().toBuffer();
   writeFileSync(join(root, "public/favicon.ico"), buildIco(pngBuf32));
   console.log("✓ public/favicon.ico");
