@@ -1,11 +1,14 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
+import { withSerwist } from "@serwist/turbopack";
 
 const isDev = process.env.NODE_ENV === "development";
 
 // Content Security Policy
 // - unsafe-inline required: Next.js App Router injects inline scripts/styles for hydration
 // - unsafe-eval required in dev only (Next.js HMR)
+// - worker-src 'self': allows same-origin service worker registration
+// - manifest-src 'self': allows loading the web app manifest
 // - Sentry ingest + Vercel Analytics endpoints explicitly allowed
 const cspDirectives = [
   "default-src 'self'",
@@ -14,6 +17,8 @@ const cspDirectives = [
   "img-src 'self' data: blob:",
   "font-src 'self'",
   "connect-src 'self' https://*.ingest.sentry.io https://vitals.vercel-insights.com https://va.vercel-scripts.com",
+  "worker-src 'self'",
+  "manifest-src 'self'",
   "frame-ancestors 'none'",
   "form-action 'self'",
   "base-uri 'self'",
@@ -41,19 +46,28 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        // Apply to all routes
         source: "/(.*)",
         headers: securityHeaders,
+      },
+      // Service worker: no caching so updates roll out immediately
+      {
+        source: "/serwist/sw.js",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=0, must-revalidate" },
+          { key: "Service-Worker-Allowed", value: "/" },
+        ],
       },
     ];
   },
 };
 
-export default withSentryConfig(nextConfig, {
-  org: process.env.SENTRY_ORG,
-  project: process.env.SENTRY_PROJECT,
-  silent: !process.env.CI,
-  widenClientFileUpload: true,
-  disableLogger: true,
-  automaticVercelMonitors: true,
-});
+export default withSerwist(
+  withSentryConfig(nextConfig, {
+    org: process.env.SENTRY_ORG,
+    project: process.env.SENTRY_PROJECT,
+    silent: !process.env.CI,
+    widenClientFileUpload: true,
+    disableLogger: true,
+    automaticVercelMonitors: true,
+  })
+);

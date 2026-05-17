@@ -601,6 +601,37 @@ See [docs/design-audit.md](design-audit.md) for full findings, recommendations, 
 - [x] **[DESIGN] [P2]** Shift date displayed as raw ISO string (`2026-03-26`) in shift detail and cover success views — `src/app/calendar/page.tsx`
 - [ ] **[DESIGN] [P2]** No loading skeletons — every async page shows plain "Loading…" text causing layout shift — `post/page.tsx`, `account/page.tsx`, `admin/page.tsx`, `calendar/page.tsx`, `VerificationGate.tsx`
 
+---
+
+## PWA
+
+Shipped 2026-05-17. Build verified (`npm run build` — 45 precache entries, SW at `/serwist/sw.js`).
+
+### Done
+- [x] Install `@serwist/turbopack`, `serwist`, `esbuild` (Turbopack-native SW pipeline for Next.js 16)
+- [x] `public/manifest.webmanifest` — ShiftSwap branding, theme `#1a4a3a` (deep teal), shortcuts to /calendar and /post
+- [x] `public/icons/icon-192x192.png`, `public/icons/icon-512x512.png` — generated from Rx circle emblem via `scripts/generate-pwa-icons.mjs`
+- [x] `public/apple-touch-icon.png` (180×180), `public/favicon.ico`, `public/favicon-32x32.png`
+- [x] `src/app/sw.ts` — service worker; NetworkOnly for all auth/shifts/me API routes; NetworkFirst for pages; CacheFirst for icons; StaleWhileRevalidate for public API lists and Next.js static assets
+- [x] `src/app/serwist/[path]/route.ts` — Route handler that compiles and serves `/serwist/sw.js` via esbuild
+- [x] `src/components/ServiceWorkerRegister.tsx` — `SerwistProvider` wrapper (exports `ServiceWorkerProvider`)
+- [x] `src/app/offline/page.tsx` — offline fallback page
+- [x] `next.config.ts` — `withSerwist` from `@serwist/turbopack`; added `worker-src 'self'` and `manifest-src 'self'` to CSP; `/serwist/sw.js` cache-control headers
+- [x] `src/app/layout.tsx` — `manifest`, `appleWebApp`, `icons` metadata; `viewport` export with `themeColor`; `ServiceWorkerProvider`; `IosBanner`
+- [x] `src/proxy.ts` — matcher exclusion extended to cover `/serwist/*`, `/icons/*`, `/apple-touch-icon.png`, `/manifest.webmanifest`
+- [x] `src/app/robots.ts` — `/offline` added to disallow list
+- [x] `src/components/IosBanner.tsx` — iOS Safari install education banner (DM Sans + Fraunces fonts, deep teal + amber palette, localStorage dismiss, standalone mode detection)
+- [x] `tsconfig.json` — excluded `src/app/sw.ts` (compiled by Serwist/esbuild, not tsc)
+
+### Follow-up (Phase C from pwa-plan.md)
+- [ ] Smoke-test on a real iPhone (Safari → Share → Add to Home Screen) and Android Chrome
+- [ ] Verify NextAuth login works inside the installed standalone PWA
+- [ ] Verify Sentry receives errors from the installed PWA
+- [ ] Verify SMS-on-cover flow works end-to-end from the standalone PWA
+- [ ] Merge to `main`; confirm Vercel preview build shows `/serwist/sw.js` in Route table
+
+---
+
 ### P3 — Polish
 
 - [ ] **[DESIGN] [P3]** No dark mode support — `darkMode` not configured; all backgrounds hard-coded white/slate-50 — `tailwind.config.ts`, `src/app/globals.css`

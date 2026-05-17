@@ -71,8 +71,8 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Run on all routes except Next.js internals and static files
+  // Run on all routes except Next.js internals, static files, and PWA assets
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|shift-swapper-logo.svg).*)",
+    "/((?!_next/static|_next/image|favicon.ico|favicon-32x32.png|shift-swapper-logo.svg|manifest.webmanifest|serwist/.*|icons/.*|apple-touch-icon.png|offline).*)",
   ],
 };

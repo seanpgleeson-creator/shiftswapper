@@ -118,6 +118,43 @@ ShiftSwap operates separately from the company's UKG scheduling system. A manual
 
 ---
 
+## PWA — shipped 2026-05-17
+
+ShiftSwap is now a full PWA. Build verified clean: `npm run build` produces 45 precache entries and the SW at `/serwist/sw.js`.
+
+**Architecture:** `@serwist/turbopack` (not `next-pwa` or `@serwist/next`). Next.js 16 uses Turbopack for production builds, so only the Turbopack route-handler approach works. The SW is compiled at build time by esbuild via the route handler at `src/app/serwist/[path]/route.ts` and served at `/serwist/sw.js`.
+
+**Key files:**
+
+| File | Purpose |
+|------|---------|
+| `public/manifest.webmanifest` | Web app manifest — deep teal theme, name/icons/shortcuts |
+| `public/icons/icon-192x192.png`, `icon-512x512.png` | Maskable PWA icons (Rx emblem on teal) |
+| `public/apple-touch-icon.png` | 180×180 iOS home screen icon |
+| `public/favicon.ico`, `favicon-32x32.png` | Favicon |
+| `src/app/sw.ts` | Service worker source — NetworkOnly for all auth/user APIs, NetworkFirst for pages, CacheFirst for icons |
+| `src/app/serwist/[path]/route.ts` | Serwist esbuild Route Handler that produces `/serwist/sw.js` |
+| `src/components/ServiceWorkerRegister.tsx` | `ServiceWorkerProvider` — wraps app in layout.tsx |
+| `src/app/offline/page.tsx` | Offline fallback page |
+| `src/components/IosBanner.tsx` | iOS Safari install education banner (DM Sans + Fraunces, teal/amber palette) |
+| `scripts/generate-pwa-icons.mjs` | One-time icon generation script (uses sharp) |
+
+**iOS banner:** Detects iOS Safari (not Chrome/Firefox on iOS, not desktop). Persists dismissal in `localStorage` key `shiftswap-ios-banner-dismissed`. Does not show if already running in `standalone` mode. Step-by-step: Share icon → Add to Home Screen → Add.
+
+**Caching rules (important — do not loosen):**
+- `/api/auth/*`, `/api/me`, `/api/shifts/*`, `/api/admin/*`, `/api/bug-report`, `/api/demo/*` → **NetworkOnly** (shared pharmacy devices, auth data)
+- `/api/locations`, `/api/roles` → StaleWhileRevalidate (public static lists only)
+- Sentry + Vercel Analytics beacons → NetworkOnly
+- Pages → NetworkFirst (10s timeout), fallback to `/offline`
+- `_next/static/**` → StaleWhileRevalidate
+- Icons / favicon / logo → CacheFirst
+
+**CSP additions:** `worker-src 'self'` and `manifest-src 'self'` added to `next.config.ts`.
+
+**Follow-up (see todo.md PWA section):** Real-device smoke tests (iPhone + Android), Sentry/SMS E2E verification in standalone mode.
+
+---
+
 ## Immediate next steps
 
 1. **Fix the Try Demo button (one-line change)**
