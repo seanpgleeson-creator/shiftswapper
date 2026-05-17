@@ -118,9 +118,9 @@ ShiftSwap operates separately from the company's UKG scheduling system. A manual
 
 ---
 
-## PWA — shipped 2026-05-17
+## PWA — shipped 2026-05-17, QA'd on desktop Chrome 2026-05-17
 
-ShiftSwap is now a full PWA. Build verified clean: `npm run build` produces 45 precache entries and the SW at `/serwist/sw.js`.
+ShiftSwap is a full installable PWA. Production smoke test passed. Real-device iOS test still outstanding.
 
 **Architecture:** `@serwist/turbopack` (not `next-pwa` or `@serwist/next`). Next.js 16 uses Turbopack for production builds, so only the Turbopack route-handler approach works. The SW is compiled at build time by esbuild via the route handler at `src/app/serwist/[path]/route.ts` and served at `/serwist/sw.js`.
 
@@ -129,7 +129,8 @@ ShiftSwap is now a full PWA. Build verified clean: `npm run build` produces 45 p
 | File | Purpose |
 |------|---------|
 | `public/manifest.webmanifest` | Web app manifest — deep teal theme, name/icons/shortcuts |
-| `public/icons/icon-192x192.png`, `icon-512x512.png` | Maskable PWA icons (Rx emblem on teal) |
+| `public/icons/icon-192x192.png`, `icon-512x512.png` | App icons (separate `any` + `maskable` entries in manifest) |
+| `public/icons/shortcut-calendar.png`, `shortcut-post.png` | 96×96 shortcut icons for Android long-press menu |
 | `public/apple-touch-icon.png` | 180×180 iOS home screen icon |
 | `public/favicon.ico`, `favicon-32x32.png` | Favicon |
 | `src/app/sw.ts` | Service worker source — NetworkOnly for all auth/user APIs, NetworkFirst for pages, CacheFirst for icons |
@@ -137,7 +138,7 @@ ShiftSwap is now a full PWA. Build verified clean: `npm run build` produces 45 p
 | `src/components/ServiceWorkerRegister.tsx` | `ServiceWorkerProvider` — wraps app in layout.tsx |
 | `src/app/offline/page.tsx` | Offline fallback page |
 | `src/components/IosBanner.tsx` | iOS Safari install education banner (DM Sans + Fraunces, teal/amber palette) |
-| `scripts/generate-pwa-icons.mjs` | One-time icon generation script (uses sharp) |
+| `scripts/generate-pwa-icons.mjs` | Re-runnable icon generation script (uses sharp) — run after any brand change |
 
 **iOS banner:** Detects iOS Safari (not Chrome/Firefox on iOS, not desktop). Persists dismissal in `localStorage` key `shiftswap-ios-banner-dismissed`. Does not show if already running in `standalone` mode. Step-by-step: Share icon → Add to Home Screen → Add.
 
@@ -147,17 +148,35 @@ ShiftSwap is now a full PWA. Build verified clean: `npm run build` produces 45 p
 - Sentry + Vercel Analytics beacons → NetworkOnly
 - Pages → NetworkFirst (10s timeout), fallback to `/offline`
 - `_next/static/**` → StaleWhileRevalidate
-- Icons / favicon / logo → CacheFirst
+- Icons / favicon / logo → CacheFirst (also precached at build time)
 
 **CSP additions:** `worker-src 'self'` and `manifest-src 'self'` added to `next.config.ts`.
 
-**Follow-up (see todo.md PWA section):** Real-device smoke tests (iPhone + Android), Sentry/SMS E2E verification in standalone mode.
+**Desktop Chrome smoke test results (2026-05-17):**
+- SW registered at `/serwist/sw.js` — activated and running ✓
+- Manifest valid — name, theme color, icons, shortcuts all correct ✓
+- Offline fallback (`/offline` page) confirmed ✓
+- No auth data in Cache Storage ✓
+- Cache Storage contains: `serwist-precache-v2-*`, `pages-rsc-prefetch`, `next-static`, `static-js-assets`, `others`, `api-public`, `apis`
+
+**⚠ Known issue to fix next session — `apis` cache and `/api/shifts` base route:**
+The `apis` cache appearing in Cache Storage is from `defaultCache` in `@serwist/turbopack/worker`. Our NetworkOnly regex for shifts is `/\/api\/shifts\/.*/` — this covers `/api/shifts/[id]` but NOT `/api/shifts` (the base shift-list endpoint the calendar uses with query params like `?month=...`). That base route may be falling into the `apis` NetworkFirst cache and serving stale shift data. **Fix:** Change the regex in `src/app/sw.ts` to `/\/api\/shifts/` (no trailing `\/.*`) to catch both `/api/shifts` and `/api/shifts/[id]`. Low-urgency but should be done before any shared-device rollout.
+
+**Remaining QA (see docs/pwa-qa.md):**
+- Real iPhone smoke test — iOS Safari install banner, Add to Home Screen, standalone mode
+- Verify VerificationGate redirects work from the installed standalone app
+- Sentry error capture from installed PWA (requires DSN env var first)
+- SMS cover flow from installed PWA (requires Twilio activation first)
 
 ---
 
 ## Immediate next steps
 
-1. **Fix the Try Demo button (one-line change)**
+1. **Fix SW regex for `/api/shifts` base route (5-minute fix)**
+   - In `src/app/sw.ts`, change `{ matcher: /\/api\/shifts\/.*/, handler: new NetworkOnly() }` to `{ matcher: /\/api\/shifts/, handler: new NetworkOnly() }` — removes the `\/.*` suffix so both `/api/shifts` and `/api/shifts/[id]` are covered.
+   - Commit, push, Vercel redeploys. Verify the `apis` cache no longer contains shift data after a visit to `/calendar`.
+
+2. **Fix the Try Demo button (one-line change)**
    - In `src/app/page.tsx`, change the "Try the Demo" `href` from `/demo` to `https://shiftswapper-demo.vercel.app/demo`.
    - Commit and push to `main`; Vercel deploys in ~1 minute.
    - Verify on the demo subdomain: `shiftswapper-demo.vercel.app` landing → Try Demo → auto-login → tour starts → finish → sign-up CTA.
