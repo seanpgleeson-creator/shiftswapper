@@ -152,15 +152,15 @@ ShiftSwap is a full installable PWA. Production smoke test passed. Real-device i
 
 **CSP additions:** `worker-src 'self'` and `manifest-src 'self'` added to `next.config.ts`.
 
-**Desktop Chrome smoke test results (2026-05-17):**
+**Desktop Chrome smoke test results (2026-05-17, fully resolved 2026-05-23):**
 - SW registered at `/serwist/sw.js` — activated and running ✓
 - Manifest valid — name, theme color, icons, shortcuts all correct ✓
 - Offline fallback (`/offline` page) confirmed ✓
 - No auth data in Cache Storage ✓
-- Cache Storage contains: `serwist-precache-v2-*`, `pages-rsc-prefetch`, `next-static`, `static-js-assets`, `others`, `api-public`, `apis`
-
-**⚠ Known issue to fix next session — `apis` cache and `/api/shifts` base route:**
-The `apis` cache appearing in Cache Storage is from `defaultCache` in `@serwist/turbopack/worker`. Our NetworkOnly regex for shifts is `/\/api\/shifts\/.*/` — this covers `/api/shifts/[id]` but NOT `/api/shifts` (the base shift-list endpoint the calendar uses with query params like `?month=...`). That base route may be falling into the `apis` NetworkFirst cache and serving stale shift data. **Fix:** Change the regex in `src/app/sw.ts` to `/\/api\/shifts/` (no trailing `\/.*`) to catch both `/api/shifts` and `/api/shifts/[id]`. Low-urgency but should be done before any shared-device rollout.
+- Manifest icon purpose warnings fixed — each icon now has separate `any` + `maskable` entries ✓
+- Shortcut icons (96×96) added — calendar + post shortcuts show branded icons ✓
+- `/api/shifts` base route NetworkOnly fix deployed (commit `10c4a72`) — stale `apis` cache entry manually cleared ✓
+- Cache Storage confirmed clean: `apis` cache contains no shift data after fix ✓
 
 **Remaining QA (see docs/pwa-qa.md):**
 - Real iPhone smoke test — iOS Safari install banner, Add to Home Screen, standalone mode
@@ -172,11 +172,7 @@ The `apis` cache appearing in Cache Storage is from `defaultCache` in `@serwist/
 
 ## Immediate next steps
 
-1. **Fix SW regex for `/api/shifts` base route (5-minute fix)**
-   - In `src/app/sw.ts`, change `{ matcher: /\/api\/shifts\/.*/, handler: new NetworkOnly() }` to `{ matcher: /\/api\/shifts/, handler: new NetworkOnly() }` — removes the `\/.*` suffix so both `/api/shifts` and `/api/shifts/[id]` are covered.
-   - Commit, push, Vercel redeploys. Verify the `apis` cache no longer contains shift data after a visit to `/calendar`.
-
-2. **Fix the Try Demo button (one-line change)**
+1. **Fix the Try Demo button (one-line change)**
    - In `src/app/page.tsx`, change the "Try the Demo" `href` from `/demo` to `https://shiftswapper-demo.vercel.app/demo`.
    - Commit and push to `main`; Vercel deploys in ~1 minute.
    - Verify on the demo subdomain: `shiftswapper-demo.vercel.app` landing → Try Demo → auto-login → tour starts → finish → sign-up CTA.

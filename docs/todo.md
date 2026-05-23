@@ -623,12 +623,17 @@ Shipped 2026-05-17. Build verified (`npm run build` — 45 precache entries, SW 
 - [x] `src/components/IosBanner.tsx` — iOS Safari install education banner (DM Sans + Fraunces fonts, deep teal + amber palette, localStorage dismiss, standalone mode detection)
 - [x] `tsconfig.json` — excluded `src/app/sw.ts` (compiled by Serwist/esbuild, not tsc)
 
-### Follow-up (Phase C from pwa-plan.md)
-- [ ] Smoke-test on a real iPhone (Safari → Share → Add to Home Screen) and Android Chrome
-- [ ] Verify NextAuth login works inside the installed standalone PWA
-- [ ] Verify Sentry receives errors from the installed PWA
-- [ ] Verify SMS-on-cover flow works end-to-end from the standalone PWA
-- [ ] Merge to `main`; confirm Vercel preview build shows `/serwist/sw.js` in Route table
+### Post-ship fixes (all resolved 2026-05-23)
+- [x] Split `any maskable` icon purpose into separate `any` + `maskable` manifest entries
+- [x] Add 96×96 shortcut icons (`shortcut-calendar.png`, `shortcut-post.png`)
+- [x] Fix SW regex — `/api/shifts` base list route was not NetworkOnly (commit `10c4a72`)
+- [x] Desktop Chrome full smoke test passed — SW, manifest, offline, cache isolation all verified
+
+### Remaining QA (Phase C from pwa-plan.md)
+- [ ] Real iPhone smoke test — iOS Safari install banner, Add to Home Screen, standalone mode
+- [ ] Verify VerificationGate redirects (`/check-email`, `/verify-phone`) work from standalone app
+- [ ] Verify Sentry receives errors thrown inside the installed PWA (needs DSN env var first)
+- [ ] Verify SMS cover flow works end-to-end from the installed PWA (needs Twilio activation first)
 
 ---
 
