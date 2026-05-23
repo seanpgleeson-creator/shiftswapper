@@ -47,7 +47,8 @@ const BYPASS_ROUTES: RuntimeCaching[] = [
   { matcher: /\/api\/auth\/.*/, handler: new NetworkOnly() },
   // Authenticated user data — never cache (shared pharmacy devices)
   { matcher: /\/api\/me/, handler: new NetworkOnly() },
-  { matcher: /\/api\/shifts\/.*/, handler: new NetworkOnly() },
+  // Matches /api/shifts and /api/shifts/[id] (trailing \/.* excluded the base list route)
+  { matcher: /\/api\/shifts/, handler: new NetworkOnly() },
   { matcher: /\/api\/admin\/.*/, handler: new NetworkOnly() },
   { matcher: /\/api\/bug-report/, handler: new NetworkOnly() },
   { matcher: /\/api\/demo\/.*/, handler: new NetworkOnly() },
