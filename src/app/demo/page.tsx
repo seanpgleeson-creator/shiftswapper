@@ -13,6 +13,18 @@ function setTourFlag() {
   }
 }
 
+// LinkedIn / Facebook / Instagram / other social in-app browsers whose
+// WKWebView reliably breaks the client-side NextAuth CSRF flow.
+const IN_APP_BROWSER_RE =
+  /\b(LinkedInApp|FBAN|FBAV|FB_IAB|Instagram|Twitter|Line\/|MicroMessenger)\b/i;
+
+function isInAppBrowser() {
+  return (
+    typeof navigator !== "undefined" &&
+    IN_APP_BROWSER_RE.test(navigator.userAgent)
+  );
+}
+
 function fallbackToServerAuth() {
   setTourFlag();
   window.location.href = "/api/demo/login";
@@ -33,6 +45,13 @@ export default function DemoPage() {
     }
 
     if (status === "unauthenticated") {
+      // Skip the client-side NextAuth flow entirely for known in-app browsers —
+      // their WKWebView blocks the CSRF cookie fetch that signIn() depends on.
+      if (isInAppBrowser()) {
+        fallbackToServerAuth();
+        return;
+      }
+
       signIn("credentials", {
         email: "demo@shiftswapper.app",
         password: "demo1234",

@@ -484,6 +484,7 @@ Goal: A publicly shareable demo at `shiftswapper-demo.vercel.app` with fake pre-
 - [ ] Optionally: hide the "Try the Demo" button when `NEXT_PUBLIC_DEMO_MODE=true` (already on demo, button is redundant).
 - [x] **Demo sign-up navigation:** After a user finishes the demo tour and is exploring freely, there is no persistent way to navigate to sign-up. Add an elegant, non-intrusive CTA (e.g. a floating or sticky button/bar) on demo pages so users can quickly reach the sign-up page at any time.
 - [x] **Sign-up CTA copy:** Change "Sign up free" to "Sign up" in the prompt shown when users finish the demo tour.
+- [x] **LinkedIn iOS in-app browser fix:** Return HTML from `/api/demo/login` (not a 307 redirect) so LinkedIn's WKWebView stops treating the response as a file download; detect in-app browser UAs in `/demo/page.tsx` and skip straight to the server route, bypassing the doomed client-side `signIn()` CSRF flow — `src/app/api/demo/login/route.ts`, `src/app/demo/page.tsx`
 
 ---
 

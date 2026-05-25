@@ -55,7 +55,24 @@ export async function GET(request: NextRequest) {
     ? "__Secure-next-auth.session-token"
     : "next-auth.session-token";
 
-  const response = NextResponse.redirect(`${origin}/calendar?tour=1`);
+  // LinkedIn's iOS in-app browser (WKWebView) treats non-HTML responses from
+  // /api/* — including bodyless redirects — as file downloads and shows
+  // "File downloads are not supported." Return a real HTML page instead so the
+  // WebView renders it, then navigate with meta-refresh + script fallback.
+  const html = `<!doctype html><html><head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="refresh" content="0;url=/calendar?tour=1">
+  <title>Loading demo\u2026</title>
+</head><body style="font:14px system-ui,sans-serif;text-align:center;padding:4rem;color:#475569">
+  <p>Loading demo\u2026</p>
+  <script>window.location.replace('/calendar?tour=1')</script>
+</body></html>`;
+
+  const response = new NextResponse(html, {
+    status: 200,
+    headers: { "Content-Type": "text/html; charset=utf-8" },
+  });
   response.cookies.set(cookieName, token, {
     httpOnly: true,
     sameSite: "lax",
