@@ -482,6 +482,8 @@ Goal: A publicly shareable demo at `shiftswapper-demo.vercel.app` with fake pre-
 - [ ] Confirm `CRON_SECRET` is set on the demo project. Trigger a manual seed: `curl -X POST https://shiftswapper-demo.vercel.app/api/demo/reset -H "Authorization: Bearer <CRON_SECRET>"` — should return `{"ok":true,...}`.
 - [ ] Test the full flow end-to-end on the demo subdomain: landing → Try Demo → auto-login → tour starts → finish tour → sign-up CTA modal appears.
 - [ ] Optionally: hide the "Try the Demo" button when `NEXT_PUBLIC_DEMO_MODE=true` (already on demo, button is redundant).
+- [x] **Demo sign-up navigation:** After a user finishes the demo tour and is exploring freely, there is no persistent way to navigate to sign-up. Add an elegant, non-intrusive CTA (e.g. a floating or sticky button/bar) on demo pages so users can quickly reach the sign-up page at any time.
+- [x] **Sign-up CTA copy:** Change "Sign up free" to "Sign up" in the prompt shown when users finish the demo tour.
 
 ---
 

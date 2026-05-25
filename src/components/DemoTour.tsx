@@ -3,6 +3,9 @@
 import { useEffect, useState, useCallback } from "react";
 import { Joyride, STATUS, type Step, type EventData } from "react-joyride";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+
+const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
 const TOUR_KEY = "demo_tour_active";
 
@@ -82,7 +85,7 @@ export function DemoTour() {
     }
   }, []);
 
-  if (!run && !showSignupCta) return null;
+  if (!isDemo && !run && !showSignupCta) return null;
 
   return (
     <>
@@ -166,7 +169,7 @@ export function DemoTour() {
                 }}
                 className="w-full min-h-[44px] rounded-md bg-blue-600 px-4 py-2.5 font-medium text-white hover:bg-blue-700"
               >
-                Sign up free
+                Sign up
               </button>
               <button
                 type="button"
@@ -177,6 +180,26 @@ export function DemoTour() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {isDemo && !showSignupCta && (
+        <div className="fixed bottom-6 right-6 z-[9998]">
+          <Link
+            href="/signup"
+            className="flex items-center gap-2 rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg hover:bg-blue-700 transition-colors"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="w-4 h-4 shrink-0"
+              aria-hidden="true"
+            >
+              <path d="M11 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM2.046 15.547A.75.75 0 0 0 2.75 16.5h9.5a.75.75 0 0 0 .704-.953A5.002 5.002 0 0 0 8 11a5.002 5.002 0 0 0-4.954 4.047ZM13.75 7.5a.75.75 0 0 0 0 1.5h1.19l-.47.47a.75.75 0 1 0 1.06 1.06l1.75-1.75a.75.75 0 0 0 0-1.06l-1.75-1.75a.75.75 0 1 0-1.06 1.06l.47.47H13.75Z" />
+            </svg>
+            Sign up
+          </Link>
         </div>
       )}
     </>
