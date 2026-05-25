@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { Joyride, STATUS, type Step, type EventData } from "react-joyride";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
@@ -64,14 +64,31 @@ export function DemoTour() {
   const [run, setRun] = useState(false);
   const [showSignupCta, setShowSignupCta] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
-    const active = sessionStorage.getItem(TOUR_KEY);
-    if (active === "true") {
+    let active = false;
+    try {
+      active = sessionStorage.getItem(TOUR_KEY) === "true";
+    } catch {
+      // sessionStorage unavailable in some WebViews
+    }
+
+    // Also check for ?tour=1 query param (set by server-side demo login
+    // fallback when sessionStorage is unavailable)
+    if (!active && searchParams.get("tour") === "1") {
+      active = true;
+      // Clean the URL without triggering a navigation
+      const url = new URL(window.location.href);
+      url.searchParams.delete("tour");
+      window.history.replaceState({}, "", url.toString());
+    }
+
+    if (active) {
       const t = setTimeout(() => setRun(true), 800);
       return () => clearTimeout(t);
     }
-  }, []);
+  }, [searchParams]);
 
   const handleEvent = useCallback((data: EventData) => {
     const { status } = data;
