@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import { Joyride, STATUS, type Step, type EventData } from "react-joyride";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -60,10 +60,8 @@ const STEPS: Step[] = [
   },
 ];
 
-export function DemoTour() {
-  const [run, setRun] = useState(false);
-  const [showSignupCta, setShowSignupCta] = useState(false);
-  const router = useRouter();
+// Separated so useSearchParams() is inside a Suspense boundary (Next.js requirement)
+function TourStarter({ onActivate }: { onActivate: () => void }) {
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -78,17 +76,28 @@ export function DemoTour() {
     // fallback when sessionStorage is unavailable)
     if (!active && searchParams.get("tour") === "1") {
       active = true;
-      // Clean the URL without triggering a navigation
       const url = new URL(window.location.href);
       url.searchParams.delete("tour");
       window.history.replaceState({}, "", url.toString());
     }
 
     if (active) {
-      const t = setTimeout(() => setRun(true), 800);
-      return () => clearTimeout(t);
+      onActivate();
     }
-  }, [searchParams]);
+  }, [searchParams, onActivate]);
+
+  return null;
+}
+
+export function DemoTour() {
+  const [run, setRun] = useState(false);
+  const [showSignupCta, setShowSignupCta] = useState(false);
+  const router = useRouter();
+
+  const handleActivate = useCallback(() => {
+    const t = setTimeout(() => setRun(true), 800);
+    return () => clearTimeout(t);
+  }, []);
 
   const handleEvent = useCallback((data: EventData) => {
     const { status } = data;
@@ -102,10 +111,17 @@ export function DemoTour() {
     }
   }, []);
 
-  if (!isDemo && !run && !showSignupCta) return null;
+  if (!isDemo && !run && !showSignupCta) return (
+    <Suspense fallback={null}>
+      <TourStarter onActivate={handleActivate} />
+    </Suspense>
+  );
 
   return (
     <>
+      <Suspense fallback={null}>
+        <TourStarter onActivate={handleActivate} />
+      </Suspense>
       <Joyride
         steps={STEPS}
         run={run}
