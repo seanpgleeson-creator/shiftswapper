@@ -488,6 +488,52 @@ Goal: A publicly shareable demo at `shiftswapper-demo.vercel.app` with fake pre-
 
 ---
 
+## Admin Visibility & Member Validation
+
+Goal: Give the admin visibility into new signups (security monitoring) and eventually restrict signup to verified HCMC employees.
+
+### Admin signup notifications
+
+- [x] Route signup notifications to a dedicated admin email separate from `schedulerEmail`. Adds `ADMIN_NOTIFICATION_EMAIL` env var, used by `POST /api/auth/signup`; falls back to `settings.schedulerEmail` when unset — `src/app/api/auth/signup/route.ts`, `.env.example`
+- [ ] **Manual step:** Set `ADMIN_NOTIFICATION_EMAIL=seanpgleeson@gmail.com` in Vercel env vars on the `shiftswapper` (prod) and `shiftswapper-demo` projects.
+- [ ] (Optional polish) Include user's signup IP and User-Agent in the notification email body to help spot bad actors — `src/lib/email.ts`, `src/app/api/auth/signup/route.ts`
+
+### Employee validation (future) — gate signup to real HCMC staff
+
+Three implementation options; not mutually exclusive. Pick one (or the hybrid) when ready.
+
+#### Option A — Email domain allowlist
+
+- [ ] Add `ALLOWED_SIGNUP_EMAIL_DOMAINS` env var (CSV, e.g. `hcmed.org,hennepinhealthcare.org`).
+- [ ] Extend `signupSchema` in `src/lib/validation.ts` to reject emails whose domain is not in the allowlist.
+- [ ] Show a clear inline error: "Please sign up with your HCMC email (e.g. you@hennepinhealthcare.org)."
+- Pros: zero friction for staff with an org email; impossible to bypass without one.
+- Cons: blocks staff who prefer personal email; requires confirming HCMC's actual primary domain(s).
+
+#### Option B — Invite PIN / code
+
+- [ ] Add `Invite` model to Prisma schema: `code @id`, `createdById`, `createdAt`, `usedByUserId?`, `usedAt?`, `expiresAt?`.
+- [ ] Add `/admin/invites` panel for the existing admin role to bulk-generate codes (e.g. 50 at a time, copyable list).
+- [ ] Add `invite_code` field to the signup form; reject signup if missing, already used, expired, or invalid.
+- [ ] Mark code used on successful signup (one-time use; transactional with user creation).
+- Pros: works for any email; admin controls access list; fully auditable.
+- Cons: codes can be shared; needs a distribution channel (Slack, posters, in-person handoff).
+
+#### Option C — Hybrid (recommended)
+
+- Auto-approve signups from `ALLOWED_SIGNUP_EMAIL_DOMAINS` (skip the PIN field).
+- Require a valid `invite_code` for anyone using a non-allowed domain.
+- Best of both worlds: zero friction for org-email users, controlled access for personal-email users.
+- Implementation = Option A + Option B + branching validation in `signupSchema`.
+
+### Open questions to resolve before implementing validation
+
+- What is HCMC's actual employee email domain? (`hennepinhealthcare.org`? `hcmed.org`? Both?)
+- Do contractors / per-diem staff have org email, or do they need an alternate path (PIN)?
+- Should existing non-employee signups be retro-flagged for admin review, or grandfathered in?
+
+---
+
 ## Homepage: auth-aware CTAs
 
 Goal: Logged-in users should see in-app actions on the homepage, not the visitor-facing "Try the Demo" / "Log in" buttons.

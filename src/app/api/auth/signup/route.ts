@@ -93,10 +93,14 @@ export async function POST(request: NextRequest) {
     console.warn("NEXTAUTH_URL not set; verification email link not sent");
   }
 
-  const settings = await prisma.settings.findFirst();
-  const schedulerEmail = settings?.schedulerEmail ?? "";
-  if (schedulerEmail) {
-    const notif = await sendSignupNotificationToAdmin(schedulerEmail, {
+  // Prefer a dedicated admin notification address; fall back to schedulerEmail
+  // so existing deployments without the env var continue to work.
+  const adminEmail =
+    process.env.ADMIN_NOTIFICATION_EMAIL?.trim() ||
+    (await prisma.settings.findFirst())?.schedulerEmail ||
+    "";
+  if (adminEmail) {
+    const notif = await sendSignupNotificationToAdmin(adminEmail, {
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
