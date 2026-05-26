@@ -495,7 +495,7 @@ Goal: Give the admin visibility into new signups (security monitoring) and event
 ### Admin signup notifications
 
 - [x] Route signup notifications to a dedicated admin email separate from `schedulerEmail`. Adds `ADMIN_NOTIFICATION_EMAIL` env var, used by `POST /api/auth/signup`; falls back to `settings.schedulerEmail` when unset — `src/app/api/auth/signup/route.ts`, `.env.example`
-- [ ] **Manual step:** Set `ADMIN_NOTIFICATION_EMAIL=seanpgleeson@gmail.com` in Vercel env vars on the `shiftswapper` (prod) and `shiftswapper-demo` projects.
+- [x] **Manual step:** Set `ADMIN_NOTIFICATION_EMAIL=seanpgleeson@gmail.com` in Vercel env vars on the `shiftswapper` (prod) and `shiftswapper-demo` projects. ✓ Verified — notification emails are arriving correctly.
 - [ ] (Optional polish) Include user's signup IP and User-Agent in the notification email body to help spot bad actors — `src/lib/email.ts`, `src/app/api/auth/signup/route.ts`
 
 ### Employee validation (future) — gate signup to real HCMC staff
