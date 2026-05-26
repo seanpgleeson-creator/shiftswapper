@@ -27,7 +27,9 @@ function isInAppBrowser() {
 
 function fallbackToServerAuth() {
   setTourFlag();
-  window.location.href = "/api/demo/login";
+  // Use /demo-start (not /api/demo/login) — LinkedIn iOS blocks navigation to
+  // any /api/* URL at the policy layer regardless of response Content-Type.
+  window.location.href = "/demo-start";
 }
 
 export default function DemoPage() {
@@ -38,6 +40,14 @@ export default function DemoPage() {
   const router = useRouter();
 
   useEffect(() => {
+    // For known in-app browsers, skip session resolution entirely and go
+    // straight to the server-side auth page. /demo-start is a plain page path
+    // so LinkedIn iOS won't intercept it as it does with /api/* routes.
+    if (isInAppBrowser()) {
+      fallbackToServerAuth();
+      return;
+    }
+
     if (status === "authenticated") {
       setTourFlag();
       router.replace("/calendar");
@@ -45,13 +55,6 @@ export default function DemoPage() {
     }
 
     if (status === "unauthenticated") {
-      // Skip the client-side NextAuth flow entirely for known in-app browsers —
-      // their WKWebView blocks the CSRF cookie fetch that signIn() depends on.
-      if (isInAppBrowser()) {
-        fallbackToServerAuth();
-        return;
-      }
-
       signIn("credentials", {
         email: "demo@shiftswapper.app",
         password: "demo1234",
