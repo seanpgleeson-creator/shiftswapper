@@ -89,6 +89,12 @@ function htmlRedirect(origin: string, path: string): NextResponse {
 
   return new NextResponse(html, {
     status: 200,
-    headers: { "Content-Type": "text/html; charset=utf-8" },
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      // Explicitly tell the browser to render this inline, not download it.
+      // Some in-app browsers (LinkedIn iOS WKWebView) apply download detection
+      // heuristics and this header overrides them.
+      "Content-Disposition": "inline",
+    },
   });
 }
