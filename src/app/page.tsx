@@ -39,6 +39,8 @@ export default function HomePage() {
           <>
             <a
               href="https://shiftswapper-demo.vercel.app/demo-start"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center justify-center min-h-[48px] w-full sm:w-auto rounded-md bg-blue-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-blue-700 focus:ring-2 focus:ring-blue-500"
             >
               Try the Demo
