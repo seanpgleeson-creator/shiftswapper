@@ -6,6 +6,7 @@ import { SessionProvider } from "@/components/SessionProvider";
 import { VerificationGate } from "@/components/VerificationGate";
 import { ServiceWorkerProvider } from "@/components/ServiceWorkerRegister";
 import { IosBanner } from "@/components/IosBanner";
+import { InAppBrowserNotice } from "@/components/InAppBrowserNotice";
 import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
@@ -52,6 +53,7 @@ export default function RootLayout({
               >
                 Skip to content
               </a>
+              <InAppBrowserNotice />
               <NavBar />
               <main id="main-content" className="flex-1">{children}</main>
               <Footer />
