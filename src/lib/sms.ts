@@ -7,11 +7,14 @@ function redactPhone(phone: string): string {
 }
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
+const apiKeySid = process.env.TWILIO_API_KEY_SID;
+const apiKeySecret = process.env.TWILIO_API_KEY_SECRET;
 const fromNumber = process.env.TWILIO_PHONE_NUMBER;
 
 const client =
-  accountSid && authToken ? twilio(accountSid, authToken) : null;
+  accountSid && apiKeySid && apiKeySecret
+    ? twilio(apiKeySid, apiKeySecret, { accountSid })
+    : null;
 
 export type CoverSmsPayload = {
   posterPhone: string;
@@ -28,7 +31,7 @@ export async function sendCoverSms(
   payload: CoverSmsPayload
 ): Promise<{ ok: boolean; error?: string }> {
   if (!client || !fromNumber) {
-    const msg = "Twilio not configured (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, or TWILIO_PHONE_NUMBER missing); skipping SMS";
+    const msg = "Twilio not configured (TWILIO_ACCOUNT_SID, TWILIO_API_KEY_SID, TWILIO_API_KEY_SECRET, or TWILIO_PHONE_NUMBER missing); skipping SMS";
     console.warn("[CoverSMS]", msg);
     return { ok: false, error: "SMS not configured" };
   }

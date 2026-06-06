@@ -12,11 +12,11 @@ const isDev = process.env.NODE_ENV === "development";
 // - Sentry ingest + Vercel Analytics endpoints explicitly allowed
 const cspDirectives = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://va.vercel-scripts.com`,
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://va.vercel-scripts.com https://us-assets.i.posthog.com`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self'",
-  "connect-src 'self' https://*.ingest.sentry.io https://vitals.vercel-insights.com https://va.vercel-scripts.com",
+  "connect-src 'self' https://*.ingest.sentry.io https://vitals.vercel-insights.com https://va.vercel-scripts.com https://us.i.posthog.com https://us-assets.i.posthog.com",
   "worker-src 'self'",
   "manifest-src 'self'",
   "frame-ancestors 'none'",
